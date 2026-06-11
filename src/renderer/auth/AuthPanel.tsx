@@ -69,7 +69,13 @@ export function AuthPanel(): ReactElement {
   return (
     <PageShell className="justify-center">
       <div className="mx-auto w-full max-w-[360px]">
-        <img src="/logo.png" alt="Petory" className="mx-auto mb-4 h-10 w-auto" />
+        <img
+          src="/app-icon.png"
+          alt=""
+          aria-hidden
+          className="mx-auto mb-3 h-[72px] w-[72px] rounded-[18px] shadow-sm"
+        />
+        <img src="/logo.png" alt="Petory" className="mx-auto mb-4 h-14 w-auto" />
         <p className="text-center text-[24px] font-semibold">欢迎来到 Petory</p>
         <p className="mt-2 text-center text-[13px] text-petory-text-secondary">
           {remote ? '请登录后使用，额度与生成由云端同步。' : '请注册或登录后使用 Petory。'}

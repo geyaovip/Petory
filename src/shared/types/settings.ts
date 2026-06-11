@@ -26,9 +26,9 @@ export interface UserSettings {
 }
 
 export const PET_SIZE_HEIGHT: Record<PetSizePreset, number> = {
-  small: 120,
-  medium: 160,
-  large: 220
+  small: 150,
+  medium: 200,
+  large: 280
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {

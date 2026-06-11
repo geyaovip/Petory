@@ -94,7 +94,7 @@ body {
 
 .brand-logo {
   display: block;
-  height: 32px;
+  height: 44px;
   width: auto;
   max-width: 100%;
 }
@@ -107,8 +107,8 @@ body {
 }
 
 .login-card .brand-logo {
-  height: 40px;
-  margin: 0 auto 12px;
+  height: 56px;
+  margin: 0 auto 16px;
 }
 
 .nav-group {

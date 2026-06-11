@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
+import sharp from 'sharp'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
@@ -38,8 +39,42 @@ copy(sources.primary, 'server/admin/public/logo.png')
 copy(sources.appIcon, 'server/admin/public/app-icon.png')
 copy(sources.appIcon, 'website/assets/app-icon.png')
 copy(sources.appIcon, 'src/renderer/public/app-icon.png')
-copy(sources.appIcon, 'website/favicon.png')
 copy(sources.avatar, 'website/assets/avatar.png')
+
+/** Zoom into the cat so tab favicons read larger at 16–32px. */
+async function writeZoomedSquareIcon(source, dest, size, zoom = 1.34) {
+  const zoomed = Math.max(size, Math.round(size * zoom))
+  const offset = Math.max(0, Math.round((zoomed - size) / 2))
+  await sharp(source)
+    .resize(zoomed, zoomed, { fit: 'cover', position: 'centre' })
+    .extract({ left: offset, top: offset, width: size, height: size })
+    .png()
+    .toFile(dest)
+}
+
+async function writeFaviconSet(source, outDir) {
+  fs.mkdirSync(outDir, { recursive: true })
+  const sizes = [
+    [16, 1.42],
+    [32, 1.36],
+    [48, 1.3]
+  ]
+  for (const [size, zoom] of sizes) {
+    const dest = path.join(outDir, `favicon-${size}.png`)
+    await writeZoomedSquareIcon(source, dest, size, zoom)
+    console.log(`✓ ${path.relative(root, dest)}`)
+  }
+  const appleTouch = path.join(outDir, 'apple-touch-icon.png')
+  await writeZoomedSquareIcon(source, appleTouch, 180, 1.18)
+  console.log(`✓ ${path.relative(root, appleTouch)}`)
+  await fs.promises.copyFile(path.join(outDir, 'favicon-32.png'), path.join(outDir, 'favicon.png'))
+  console.log(`✓ ${path.relative(root, path.join(outDir, 'favicon.png'))}`)
+}
+
+const appIconSrc = path.join(srcDir, sources.appIcon)
+await writeFaviconSet(appIconSrc, path.join(root, 'website'))
+await writeFaviconSet(appIconSrc, path.join(root, 'src/renderer/public'))
+await writeFaviconSet(appIconSrc, path.join(root, 'server/admin/public'))
 
 const buildDir = path.join(root, 'build')
 fs.mkdirSync(buildDir, { recursive: true })

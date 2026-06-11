@@ -1,7 +1,8 @@
 import { config } from 'dotenv'
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu } from 'electron'
 import fs from 'fs'
 import path from 'path'
+import { loadAppIcon } from './appIcon'
 import { ERROR_MESSAGES } from '../../src/shared/constants'
 import { IPC, type MenuAction, type UploadPayload, type WindowPosition } from '../../src/shared/ipc'
 import type { PetVisualState } from '../../src/shared/types/growth'
@@ -761,13 +762,9 @@ async function bootstrapOnLaunch(): Promise<void> {
 }
 
 function applyAppIcon(): void {
-  const iconPath = path.join(__dirname, '../../build/icon.png')
-  if (!fs.existsSync(iconPath)) return
-  const icon = nativeImage.createFromPath(iconPath)
-  if (icon.isEmpty()) return
-  if (process.platform === 'darwin' && app.dock) {
-    app.dock.setIcon(icon)
-  }
+  const icon = loadAppIcon()
+  if (!icon || process.platform !== 'darwin' || !app.dock) return
+  app.dock.setIcon(icon)
 }
 
 app.whenReady().then(async () => {

@@ -5,9 +5,9 @@ import { loadUserSettings, saveUserSettings } from './settingsStore'
 import { getAllPetWindows } from './windows'
 
 const PET_WINDOW_SIZE: Record<UserSettings['petSize'], [number, number]> = {
-  small: [200, 260],
-  medium: [220, 300],
-  large: [260, 360]
+  small: [240, 310],
+  medium: [270, 360],
+  large: [320, 440]
 }
 
 export function applyUserSettings(settings?: UserSettings): UserSettings {

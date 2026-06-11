@@ -10,8 +10,8 @@ interface WindowState extends WindowPosition {
   height: number
 }
 
-const PET_WINDOW_WIDTH = 220
-const PET_WINDOW_HEIGHT = 280
+const PET_WINDOW_WIDTH = 270
+const PET_WINDOW_HEIGHT = 360
 const PET_WINDOW_MARGIN = 24
 
 /** Old default before bottom-right placement — used for one-time migration. */

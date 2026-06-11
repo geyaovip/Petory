@@ -161,12 +161,12 @@ export function PetManagerPanel(): ReactElement {
           {pets.map((pet) => (
             <li key={pet.id} className="rounded-2xl bg-petory-surface p-4 shadow-sm">
               <div className="flex items-start gap-3">
-                <div className="bg-petory-checker-sm flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-petory-border">
+                <div className="bg-petory-checker-sm flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-petory-border">
                   {previews[pet.id] ? (
                     <img
                       src={previews[pet.id]}
                       alt={pet.name || '宠物预览'}
-                      className="max-h-12 max-w-12 object-contain"
+                      className="max-h-[72px] max-w-[72px] object-contain"
                     />
                   ) : (
                     <span className="text-[10px] text-petory-text-tertiary">无图</span>
