@@ -17,6 +17,7 @@ Petory 是一个 Electron 桌面应用，仓库里同时放了客户端、服务
 | `website/` | 官网与下载页静态站 |
 | `docs/` | 产品、架构、版本、部署文档 |
 | `scripts/` | 构建、发布、校验脚本 |
+| `deploy/` | 生产环境编排、环境模板与部署说明 |
 
 ## 文件格式习惯
 
@@ -34,6 +35,7 @@ Petory 是一个 Electron 桌面应用，仓库里同时放了客户端、服务
 | 官网下载 manifest | `website/releases/latest.json` |
 | 自动更新 feed | `src/shared/constants.ts` + `electron/main/updateService.ts` |
 | 管理端部署 | `docs/admin/DEPLOY.md` |
+| 云服务器部署 | `deploy/server/README.md` |
 | GitHub 反馈入口 | `PETORY_GITHUB_ISSUES_URL` / `PETORY_GITHUB_REPO` |
 
 ## 维护顺序建议

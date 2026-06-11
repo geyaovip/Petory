@@ -2,7 +2,6 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from '@hono/node-server/serve-static'
 import path from 'path'
-import { fileURLToPath } from 'url'
 import { config } from './config.js'
 import { authRoutes } from './routes/auth.js'
 import { userRoutes } from './routes/user.js'
@@ -14,8 +13,6 @@ import { appRoutes } from './routes/app.js'
 import { paymentRoutes } from './routes/payment.js'
 import { loginAdmin } from './services/authService.js'
 import { ensureUploadsDir } from './services/storageService.js'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export function createApp() {
   ensureUploadsDir()
@@ -58,7 +55,7 @@ export function createApp() {
   app.use(
     '/admin/*',
     serveStatic({
-      root: path.join(__dirname, '../admin/public'),
+      root: path.join(process.cwd(), 'admin/public'),
       rewriteRequestPath: (p) => p.replace(/^\/admin/, '') || '/index.html'
     })
   )

@@ -1,10 +1,7 @@
 import { config as loadEnv } from 'dotenv'
 import path from 'path'
-import { fileURLToPath } from 'url'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
-loadEnv({ path: path.join(__dirname, '../.env') })
+loadEnv({ path: path.join(process.cwd(), '.env') })
 
 function required(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback
@@ -27,7 +24,7 @@ export const config = {
   operatorEmail: (process.env.OPERATOR_EMAIL ?? 'operator@petory.app').toLowerCase(),
   operatorPassword: process.env.OPERATOR_PASSWORD ?? 'petory-operator',
   publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? 'http://localhost:8787').replace(/\/$/, ''),
-  uploadsDir: path.join(__dirname, '../uploads'),
+  uploadsDir: path.join(process.cwd(), 'uploads'),
   maxUploadBytes: 10 * 1024 * 1024,
   jobTimeoutMs: 60_000,
   kimiApiKey: process.env.KIMI_API_KEY ?? '',
