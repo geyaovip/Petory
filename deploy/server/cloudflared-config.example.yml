@@ -1,0 +1,9 @@
+tunnel: 5d253394-9b27-41b0-bd04-a1864b3da408
+credentials-file: /etc/cloudflared/5d253394-9b27-41b0-bd04-a1864b3da408.json
+
+ingress:
+  - hostname: api.cryptopilot.chat
+    service: http://127.0.0.1:3002
+  - hostname: api.petory.chat
+    service: http://127.0.0.1:8787
+  - service: http_status:404

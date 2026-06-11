@@ -10,7 +10,14 @@ npm run website:preview
 
 ## 部署
 
-将 `website/` 目录整体部署到 `https://petory.chat`。当前优先推荐 Cloudflare Pages。
+Cloudflare Pages 项目名为 `petory`，已连接 GitHub 仓库
+`geyaovip/petory`。`main` 分支更新后会自动部署 `website/` 到：
+
+- 正式域名：`https://petory.chat`
+- Pages 域名：`https://petory.pages.dev`
+
+Pages 构建设置：框架预设为 `None`，构建命令留空，输出目录为
+`website`。
 
 ## 发布流程
 

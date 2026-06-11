@@ -20,6 +20,17 @@ Petory uses a dedicated Compose project on the shared cloud server. It does not 
 
 The public API should be exposed through Cloudflare Tunnel as `api.petory.chat`.
 
+The shared tunnel configuration is documented in
+`cloudflared-config.example.yml`. Keep the CryptoPilot route first, add Petory
+as a separate hostname, and retain the final `http_status:404` catch-all.
+
+```bash
+sudo cp /etc/cloudflared/config.yml /etc/cloudflared/config.yml.backup-$(date +%Y%m%d-%H%M%S)
+sudo install -o root -g root -m 600 \
+  cloudflared-config.example.yml /etc/cloudflared/config.yml
+sudo systemctl restart cloudflared
+```
+
 The container runs the TypeScript entrypoint with `tsx` without watch mode. This keeps the
 production process deterministic while the legacy server type errors are repaired separately.
 
@@ -34,6 +45,8 @@ docker compose up -d --build
 docker compose ps
 curl http://127.0.0.1:8787/health
 ```
+
+Production health check: `https://api.petory.chat/health`.
 
 ## Update
 
