@@ -48,11 +48,10 @@ a {
   align-items: center;
 }
 
-.logo-mark {
+.logo img {
   display: block;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  height: 56px;
+  width: auto;
 }
 
 .nav-links {

@@ -41,11 +41,12 @@ copy(sources.appIcon, 'website/assets/app-icon.png')
 copy(sources.appIcon, 'src/renderer/public/app-icon.png')
 copy(sources.avatar, 'website/assets/avatar.png')
 
-/** Zoom into the cat so tab favicons read larger at 16–32px. */
-async function writeZoomedSquareIcon(source, dest, size, zoom = 1.34) {
+/** Trim transparent margins, then crop tight so tab icons read larger. */
+async function writeTightFavicon(source, dest, size, zoom = 1.2) {
+  const trimmed = await sharp(source).trim({ threshold: 12 }).png().toBuffer()
   const zoomed = Math.max(size, Math.round(size * zoom))
   const offset = Math.max(0, Math.round((zoomed - size) / 2))
-  await sharp(source)
+  await sharp(trimmed)
     .resize(zoomed, zoomed, { fit: 'cover', position: 'centre' })
     .extract({ left: offset, top: offset, width: size, height: size })
     .png()
@@ -55,17 +56,17 @@ async function writeZoomedSquareIcon(source, dest, size, zoom = 1.34) {
 async function writeFaviconSet(source, outDir) {
   fs.mkdirSync(outDir, { recursive: true })
   const sizes = [
-    [16, 1.42],
-    [32, 1.36],
+    [16, 1.65],
+    [32, 1.45],
     [48, 1.3]
   ]
   for (const [size, zoom] of sizes) {
     const dest = path.join(outDir, `favicon-${size}.png`)
-    await writeZoomedSquareIcon(source, dest, size, zoom)
+    await writeTightFavicon(source, dest, size, zoom)
     console.log(`✓ ${path.relative(root, dest)}`)
   }
   const appleTouch = path.join(outDir, 'apple-touch-icon.png')
-  await writeZoomedSquareIcon(source, appleTouch, 180, 1.18)
+  await writeTightFavicon(source, appleTouch, 180, 1.12)
   console.log(`✓ ${path.relative(root, appleTouch)}`)
   await fs.promises.copyFile(path.join(outDir, 'favicon-32.png'), path.join(outDir, 'favicon.png'))
   console.log(`✓ ${path.relative(root, path.join(outDir, 'favicon.png'))}`)
