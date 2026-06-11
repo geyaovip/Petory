@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  displayName  String
+  status       String    @default("active")
+  plan         String    @default("free")
+  proExpiresAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+
+  devices    Device[]
+  batches    GenerationBatch[]
+  jobs       GenerationJob[]
+  quota      GenerationQuota?
+  chatQuota  ChatQuota?
+  quotaLogs  QuotaLog[]
+  chatLogs   ChatLog[]
+  redeemLogs    RedeemLog[]
+  paymentOrders PaymentOrder[]
+}
+
+model PaymentOrder {
+  id          String    @id @default(uuid())
+  userId      String
+  planId      String
+  amountCents Int
+  currency    String    @default("CNY")
+  status      String    @default("pending")
+  provider    String    @default("mock")
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Device {
+  id            String   @id @default(uuid())
+  userId        String
+  localDeviceId String
+  deviceName    String?
+  os            String?
+  osVersion     String?
+  appVersion    String?
+  flagged       Boolean  @default(false)
+  lastActiveAt  DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, localDeviceId])
+}
+
+model GenerationBatch {
+  id             String   @id @default(uuid())
+  userId         String
+  deviceId       String?
+  jobType        String   @default("full_batch")
+  styleType      String   @default("petory")
+  status         String   @default("processing")
+  inputImagePath String?
+  posesTotal     Int      @default(0)
+  posesSucceeded Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs GenerationJob[]
+}
+
+model GenerationJob {
+  id              String   @id @default(uuid())
+  userId          String
+  batchId         String?
+  deviceId        String?
+  jobType         String   @default("single_pose")
+  styleType       String   @default("petory")
+  pose            String   @default("idle")
+  status          String   @default("pending")
+  inputImagePath  String?
+  outputImagePath String?
+  prompt          String?
+  errorCode       String?
+  errorMessage    String?
+  durationMs      Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batch GenerationBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model GenerationQuota {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  dailyLimit Int
+  usedToday  Int      @default(0)
+  bonusQuota Int      @default(0)
+  totalUsed  Int      @default(0)
+  resetDate  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChatQuota {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  dailyLimit Int
+  usedToday  Int      @default(0)
+  bonusQuota Int      @default(0)
+  totalUsed  Int      @default(0)
+  resetDate  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChatLog {
+  id           String   @id @default(uuid())
+  userId       String
+  petId        String?
+  petName      String?
+  personality  String?
+  status       String
+  model        String?
+  inputChars   Int      @default(0)
+  outputChars  Int      @default(0)
+  durationMs   Int?
+  errorCode    String?
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model QuotaLog {
+  id          String   @id @default(uuid())
+  userId      String
+  changeType  String
+  amount      Int
+  beforeValue Int
+  afterValue  Int
+  reason      String?
+  operatorId  String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RedeemCode {
+  id        String    @id @default(uuid())
+  code      String    @unique
+  plan      String    @default("pro")
+  maxUses   Int       @default(1)
+  usedCount Int       @default(0)
+  expiresAt DateTime?
+  active    Boolean   @default(true)
+  note      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  logs RedeemLog[]
+}
+
+model RedeemLog {
+  id        String   @id @default(uuid())
+  codeId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  code RedeemCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  adminEmail String
+  action     String
+  targetType String?
+  targetId   String?
+  detail     String?
+  createdAt  DateTime @default(now())
+}
+
+model UserLoginLog {
+  id        String   @id @default(uuid())
+  userId    String
+  email     String
+  ip        String?
+  success   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model AdminUser {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  role         String    @default("admin")
+  status       String    @default("active")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+}

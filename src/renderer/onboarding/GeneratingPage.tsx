@@ -1,0 +1,67 @@
+import { useEffect, useState, type ReactElement } from 'react'
+import { ONBOARDING_COPY } from '@shared/copy/onboarding'
+import { getStyleDefinition } from '@shared/styles'
+import type { GenerationPhase, PetStyleType } from '@shared/types/pet'
+import { PageShell } from '../components/ui/PageShell'
+
+interface GeneratingPageProps {
+  styleType?: PetStyleType
+}
+
+const PHASE_HEADLINE: Record<GenerationPhase, string> = {
+  upload: ONBOARDING_COPY.generating.upload,
+  remote: ONBOARDING_COPY.generating.remote,
+  local: ONBOARDING_COPY.generating.local
+}
+
+export function GeneratingPage({ styleType = 'petory' }: GeneratingPageProps): ReactElement {
+  const styleLabel = getStyleDefinition(styleType).labelZh
+  const [phase, setPhase] = useState<GenerationPhase>('remote')
+  const [poseLabel, setPoseLabel] = useState('准备中')
+  const [progress, setProgress] = useState({ index: 0, total: 0 })
+
+  useEffect(() => {
+    document.title = 'Petory — 生成中'
+  }, [])
+
+  useEffect(() => {
+    return window.petory.pet.onGenerationProgress((payload) => {
+      if (payload.phase) setPhase(payload.phase)
+      setPoseLabel(payload.poseLabel)
+      setProgress({ index: payload.index, total: payload.total })
+    })
+  }, [])
+
+  const percent =
+    progress.total > 0 && phase === 'local'
+      ? Math.round((progress.index / progress.total) * 100)
+      : undefined
+
+  const detailLine =
+    phase === 'local' && progress.total > 0
+      ? ONBOARDING_COPY.generating.poseProgress(poseLabel, progress.index, progress.total)
+      : phase === 'remote'
+        ? ONBOARDING_COPY.generating.poseWorking(poseLabel)
+        : null
+
+  return (
+    <PageShell className="items-center justify-center text-center">
+      <div className="mb-8 h-16 w-16 animate-pulse rounded-full bg-petory-primary-soft" />
+      <p className="text-[18px] font-medium">{PHASE_HEADLINE[phase]}</p>
+      {detailLine ? (
+        <p className="mt-2 text-[13px] text-petory-text-secondary">{detailLine}</p>
+      ) : null}
+      <p className="mt-1 text-[12px] text-petory-text-tertiary">
+        {ONBOARDING_COPY.generating.styleNote(styleLabel)}
+      </p>
+      <div className="mt-8 h-0.5 w-48 overflow-hidden rounded-full bg-[#F0EEEA]">
+        <div
+          className="h-full rounded-full bg-petory-primary transition-all duration-500"
+          style={{
+            width: percent !== undefined ? `${Math.max(8, percent)}%` : '33%'
+          }}
+        />
+      </div>
+    </PageShell>
+  )
+}

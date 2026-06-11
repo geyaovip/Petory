@@ -1,0 +1,31 @@
+appId: com.petory.app
+productName: Petory
+copyright: Copyright © 2026 Petory
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+  - scripts/rembg_remove.py
+extraResources:
+  - from: scripts/rembg_remove.py
+    to: scripts/rembg_remove.py
+  - from: resources/sample
+    to: sample
+publish:
+  provider: generic
+  url: https://petory.chat/releases
+mac:
+  category: public.app-category.lifestyle
+  target:
+    - dmg
+  hardenedRuntime: true
+  gatekeeperAssess: false
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true

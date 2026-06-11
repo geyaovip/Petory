@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+dev.db
+dev.db-journal
+uploads/
+prisma/*.db
+prisma/*.db-journal

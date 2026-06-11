@@ -1,0 +1,201 @@
+import type {
+  AuthActionResult,
+  AuthSession,
+  LoginInput,
+  RegisterInput
+} from '../../../src/shared/types/auth'
+import type { ServerAuthUser } from '../../../src/shared/types/api'
+import { apiFetch } from '../api/client'
+import { refreshAppStatus } from '../api/appStatus'
+import { getLocalDeviceId } from '../api/deviceId'
+import {
+  applyQuotaFromResponse,
+  clearRemoteQuota,
+  refreshRemoteQuota
+} from '../api/remoteQuotaStore'
+import { buildAuthState } from './entitlementService'
+import { loadSession, saveSession, clearSession } from './authStore'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function validateEmail(email: string): string | null {
+  const normalized = email.trim().toLowerCase()
+  if (!EMAIL_RE.test(normalized)) return '请输入有效的邮箱地址。'
+  return null
+}
+
+function validatePassword(password: string): string | null {
+  if (password.length < 6) return '密码至少 6 位。'
+  return null
+}
+
+function toSession(user: ServerAuthUser, token: string): AuthSession {
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      plan: user.plan,
+      proExpiresAt: user.proExpiresAt ?? null,
+      createdAt: user.createdAt
+    },
+    mode: 'account',
+    token,
+    loggedInAt: new Date().toISOString()
+  }
+}
+
+async function registerDevice(): Promise<void> {
+  await apiFetch('/api/devices/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      localDeviceId: getLocalDeviceId(),
+      deviceName: process.platform,
+      os: process.platform,
+      appVersion: process.env.npm_package_version
+    })
+  })
+}
+
+async function registerDeviceSafe(): Promise<void> {
+  try {
+    await registerDevice()
+  } catch (error) {
+    console.warn('[petory] device register failed:', error)
+  }
+}
+
+function success(): AuthActionResult {
+  return { success: true, state: buildAuthState() }
+}
+
+function failure(message: string): AuthActionResult {
+  return { success: false, message }
+}
+
+async function afterAuth(
+  user: ServerAuthUser,
+  token: string,
+  quota?: { quota?: unknown; chatQuota?: unknown }
+): Promise<AuthActionResult> {
+  saveSession(toSession(user, token))
+  applyQuotaFromResponse({
+    userLimits: user.limits,
+    quota: quota?.quota as never,
+    chatQuota: quota?.chatQuota as never
+  })
+  await refreshAppStatus(true)
+  await registerDeviceSafe()
+  try {
+    await refreshRemoteQuota()
+  } catch {
+    // quota already applied from login response when available
+  }
+  return success()
+}
+
+export async function remoteLogin(input: LoginInput): Promise<AuthActionResult> {
+  const emailError = validateEmail(input.email)
+  if (emailError) return failure(emailError)
+  const passwordError = validatePassword(input.password)
+  if (passwordError) return failure(passwordError)
+
+  try {
+    const result = await apiFetch<{
+      success: boolean
+      accessToken?: string
+      user?: ServerAuthUser
+      message?: string
+    }>('/api/auth/login', {
+      method: 'POST',
+      auth: false,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: input.email, password: input.password })
+    })
+
+    if (!result.success || !result.accessToken || !result.user) {
+      return failure(result.message || '登录失败。')
+    }
+
+    return afterAuth(result.user, result.accessToken)
+  } catch (error) {
+    return failure(error instanceof Error ? error.message : '无法连接后台服务。')
+  }
+}
+
+export async function remoteRegister(input: RegisterInput): Promise<AuthActionResult> {
+  const emailError = validateEmail(input.email)
+  if (emailError) return failure(emailError)
+  const passwordError = validatePassword(input.password)
+  if (passwordError) return failure(passwordError)
+
+  try {
+    const result = await apiFetch<{
+      success: boolean
+      accessToken?: string
+      user?: ServerAuthUser
+      message?: string
+    }>('/api/auth/register', {
+      method: 'POST',
+      auth: false,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input)
+    })
+
+    if (!result.success || !result.accessToken || !result.user) {
+      return failure(result.message || '注册失败。')
+    }
+
+    return afterAuth(result.user, result.accessToken)
+  } catch (error) {
+    return failure(error instanceof Error ? error.message : '无法连接后台服务。')
+  }
+}
+
+export async function remoteLogout(): Promise<AuthActionResult> {
+  clearSession()
+  clearRemoteQuota()
+  return success()
+}
+
+export async function remoteRedeemCode(code: string): Promise<AuthActionResult> {
+  const session = loadSession()
+  if (!session) return failure('请先登录。')
+  try {
+    const result = await apiFetch<{
+      success: boolean
+      message?: string
+      user?: ServerAuthUser
+      quota?: unknown
+    }>('/api/redeem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    })
+
+    if (!result.success || !result.user) {
+      return failure(result.message || '兑换失败。')
+    }
+
+    saveSession({
+      ...session,
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        plan: result.user.plan,
+        proExpiresAt: result.user.proExpiresAt ?? null,
+        createdAt: result.user.createdAt
+      }
+    })
+    applyQuotaFromResponse({
+      userLimits: result.user.limits,
+      quota: result.quota as never
+    })
+    await refreshRemoteQuota()
+    return success()
+  } catch (error) {
+    return failure(error instanceof Error ? error.message : '兑换失败。')
+  }
+}

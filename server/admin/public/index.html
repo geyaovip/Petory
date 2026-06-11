@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petory 管理后台</title>
+    <link rel="stylesheet" href="admin.css" />
+    <script src="admin-labels.js"></script>
+  </head>
+  <body>
+    <div id="loginScreen" class="login-wrap">
+      <div class="login-card">
+        <h1>Petory 管理后台</h1>
+        <p class="muted">运营与系统配置</p>
+        <label class="field" style="margin-top: 20px">
+          <span>邮箱</span>
+          <input id="adminEmail" type="email" placeholder="admin@petory.app" />
+        </label>
+        <label class="field">
+          <span>密码</span>
+          <input id="adminPassword" type="password" placeholder="密码" />
+        </label>
+        <div class="row">
+          <button id="loginBtn" class="primary" type="button">登录</button>
+        </div>
+        <p id="loginErr" class="err hidden"></p>
+      </div>
+    </div>
+
+    <div id="appShell" class="shell hidden">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>Petory</strong>
+          <span>管理后台</span>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">概览</div>
+          <button class="nav-item active" type="button" data-view="overview">数据概览</button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">运营</div>
+          <button class="nav-item" type="button" data-view="users">用户</button>
+          <button class="nav-item" type="button" data-view="devices">设备</button>
+          <button class="nav-item" type="button" data-view="commerce">支付与兑换</button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">生成</div>
+          <button class="nav-item" type="button" data-view="generation">生成记录</button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">日志</div>
+          <button class="nav-item" type="button" data-view="logs">对话与审计</button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">系统</div>
+          <button class="nav-item" type="button" data-view="config">系统配置</button>
+        </div>
+      </aside>
+
+      <div class="main">
+        <header class="topbar">
+          <div>
+            <h2 id="viewTitle">数据概览</h2>
+            <p id="viewSubtitle" class="muted" style="margin: 4px 0 0"></p>
+          </div>
+          <div class="topbar-actions">
+            <span id="adminRoleBadge" class="badge warn hidden"></span>
+            <button id="refreshBtn" class="secondary" type="button">刷新当前页</button>
+            <button id="logoutBtn" class="secondary" type="button">退出</button>
+          </div>
+        </header>
+
+        <div id="adminToast" class="admin-toast hidden" role="status"></div>
+
+        <main class="content">
+          <section id="view-overview" class="view active">
+            <div id="overviewStats" class="stats"></div>
+            <div class="card" style="margin-top: 16px">
+              <h3>近 7 日趋势</h3>
+              <div id="overviewTrends" class="table-wrap"></div>
+            </div>
+            <div class="card">
+              <h3>近 7 日生成失败分布</h3>
+              <div id="overviewFailures"></div>
+            </div>
+          </section>
+
+          <section id="view-config" class="view">
+            <div class="card">
+              <h3>系统配置</h3>
+              <div class="grid2" id="configForm"></div>
+              <div class="row">
+                <button id="saveConfigBtn" class="primary" type="button">保存配置</button>
+              </div>
+              <p id="configErr" class="err hidden"></p>
+            </div>
+          </section>
+
+          <section id="view-users" class="view">
+            <div class="card">
+              <div class="toolbar">
+                <h3 style="margin: 0">用户列表</h3>
+                <input
+                  id="userSearch"
+                  type="search"
+                  placeholder="搜索邮箱或昵称…"
+                  style="max-width: 240px"
+                />
+              </div>
+              <div id="usersTable" class="table-wrap"></div>
+              <div id="usersPagination" class="pagination-wrap"></div>
+            </div>
+          </section>
+
+          <section id="view-devices" class="view">
+            <div class="card">
+              <h3>设备列表</h3>
+              <div id="devicesTable" class="table-wrap"></div>
+              <div id="devicesPagination" class="pagination-wrap"></div>
+            </div>
+          </section>
+
+          <section id="view-commerce" class="view">
+            <div class="card">
+              <h3>支付订单</h3>
+              <div id="paymentOrders" class="table-wrap"></div>
+              <div id="paymentPagination" class="pagination-wrap"></div>
+            </div>
+            <div class="card">
+              <h3>兑换码</h3>
+              <div id="redeemCreate" class="row">
+                <input id="newCode" placeholder="新兑换码，如 PETORY-PRO-2026" style="flex: 1" />
+                <input id="newCodeUses" type="number" placeholder="次数" value="10" style="width: 88px" />
+                <button id="createCodeBtn" class="primary" type="button">创建</button>
+              </div>
+              <div id="codesTable" class="table-wrap" style="margin-top: 12px"></div>
+              <div id="codesPagination" class="pagination-wrap"></div>
+            </div>
+          </section>
+
+          <section id="view-generation" class="view">
+            <div class="tabs">
+              <button class="tab active" type="button" data-gen-tab="batches">生成批次</button>
+              <button class="tab" type="button" data-gen-tab="jobs">生成任务</button>
+            </div>
+            <div id="gen-batches" class="subview active">
+              <div class="card">
+                <div id="batchesTable" class="table-wrap"></div>
+              <div id="batchesPagination" class="pagination-wrap"></div>
+              </div>
+            </div>
+            <div id="gen-jobs" class="subview">
+              <div class="card">
+                <div id="jobsTable" class="table-wrap"></div>
+              <div id="jobsPagination" class="pagination-wrap"></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="view-logs" class="view">
+            <div class="tabs">
+              <button class="tab active" type="button" data-log-tab="chat">对话日志</button>
+              <button class="tab" type="button" data-log-tab="audit">管理员审计</button>
+              <button class="tab" type="button" data-log-tab="login">登录日志</button>
+            </div>
+            <div id="log-chat" class="subview active">
+              <div class="card"><div id="chatLogs" class="table-wrap"></div><div id="chatPagination" class="pagination-wrap"></div></div>
+            </div>
+            <div id="log-audit" class="subview">
+              <div class="card"><div id="auditLogs" class="table-wrap"></div><div id="auditPagination" class="pagination-wrap"></div></div>
+            </div>
+            <div id="log-login" class="subview">
+              <div class="card"><div id="loginLogs" class="table-wrap"></div><div id="loginPagination" class="pagination-wrap"></div></div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const tokenKey = 'petory_admin_token'
+      const viewMeta = {
+        overview: { title: '数据概览', subtitle: '核心指标与趋势' },
+        users: { title: '用户', subtitle: '账号、计划与额度' },
+        devices: { title: '设备', subtitle: '登录设备与异常标记' },
+        commerce: { title: '支付与兑换', subtitle: '订单与兑换码' },
+        generation: { title: '生成记录', subtitle: '批次与任务' },
+        logs: { title: '对话与审计', subtitle: '对话、审计与登录' },
+        config: { title: '系统配置', subtitle: '额度、开关与公告' }
+      }
+
+      let authToken = null
+      let adminRole = 'admin'
+      let canWrite = true
+      let configDraft = {}
+      let currentView = 'overview'
+      const loadedViews = new Set()
+      const PAGE_SIZE = 50
+      const listPages = {
+        users: 1,
+        devices: 1,
+        payments: 1,
+        codes: 1,
+        batches: 1,
+        jobs: 1,
+        chat: 1,
+        audit: 1,
+        login: 1
+      }
+      let userSearchTimer = null
+
+      function getToken() {
+        return authToken || localStorage.getItem(tokenKey) || ''
+      }
+
+      function setToken(token) {
+        authToken = token || null
+        if (token) localStorage.setItem(tokenKey, token)
+        else localStorage.removeItem(tokenKey)
+      }
+
+      const api = (path, options = {}) => {
+        const headers = { ...(options.headers || {}) }
+        const token = options.skipAuth ? '' : getToken()
+        if (token) headers.Authorization = `Bearer ${token}`
+        if (options.json) {
+          headers['Content-Type'] = 'application/json'
+          options.body = JSON.stringify(options.json)
+        }
+        const { json, skipAuth, ...fetchOptions } = options
+        return fetch(path, { ...fetchOptions, headers }).then(async (res) => {
+          const data = await res.json().catch(() => ({}))
+          if (!res.ok) throw new Error(data.message || res.statusText)
+          return data
+        })
+      }
+
+      function showLogin(message) {
+        setToken(null)
+        document.getElementById('appShell').classList.add('hidden')
+        document.getElementById('loginScreen').classList.remove('hidden')
+        const err = document.getElementById('loginErr')
+        if (message) {
+          err.textContent = message
+          err.classList.remove('hidden')
+        } else {
+          err.classList.add('hidden')
+        }
+      }
+
+      function showApp() {
+        document.getElementById('loginErr').classList.add('hidden')
+        document.getElementById('loginScreen').classList.add('hidden')
+        document.getElementById('appShell').classList.remove('hidden')
+      }
+
+      function applyWriteMode() {
+        canWrite = adminRole !== 'operator'
+        const badge = document.getElementById('adminRoleBadge')
+        if (adminRole === 'operator') {
+          badge.textContent = '只读运营账号'
+          badge.classList.remove('hidden')
+        } else {
+          badge.classList.add('hidden')
+        }
+        document.getElementById('saveConfigBtn').disabled = !canWrite
+        document.getElementById('createCodeBtn').disabled = !canWrite
+        document.getElementById('redeemCreate').classList.toggle('hidden', !canWrite)
+      }
+
+      function setView(viewId) {
+        currentView = viewId
+        document.querySelectorAll('.nav-item').forEach((el) => {
+          el.classList.toggle('active', el.dataset.view === viewId)
+        })
+        document.querySelectorAll('.view').forEach((el) => {
+          el.classList.toggle('active', el.id === `view-${viewId}`)
+        })
+        const meta = viewMeta[viewId]
+        document.getElementById('viewTitle').textContent = meta.title
+        document.getElementById('viewSubtitle').textContent = meta.subtitle
+        void loadView(viewId, true)
+      }
+
+      const F = () => window.AdminFmt
+
+      let toastTimer = null
+
+      function showToast(message, kind = 'success') {
+        const el = document.getElementById('adminToast')
+        if (!el) return
+        el.textContent = message
+        el.className = `admin-toast ${kind}`
+        clearTimeout(toastTimer)
+        toastTimer = setTimeout(() => {
+          el.className = 'admin-toast hidden'
+        }, 3200)
+      }
+
+      function setTablesLoading(ids) {
+        ids.forEach((id) => {
+          const node = document.getElementById(id)
+          if (node) node.innerHTML = '<p class="loading">加载中…</p>'
+        })
+      }
+
+      function pageQuery(page) {
+        return `page=${page}&pageSize=${PAGE_SIZE}`
+      }
+
+      function renderPagination(containerId, meta, onPage) {
+        const el = document.getElementById(containerId)
+        if (!el) return
+        if (!meta || meta.total <= 0) {
+          el.innerHTML = ''
+          return
+        }
+        const prevDisabled = meta.page <= 1
+        const nextDisabled = meta.page >= meta.totalPages
+        el.innerHTML = `<div class="pagination">
+          <span class="muted">共 ${meta.total} 条 · 第 ${meta.page}/${meta.totalPages} 页</span>
+          <div class="pagination-actions">
+            <button type="button" class="secondary" data-dir="prev" ${prevDisabled ? 'disabled' : ''}>上一页</button>
+            <button type="button" class="secondary" data-dir="next" ${nextDisabled ? 'disabled' : ''}>下一页</button>
+          </div>
+        </div>`
+        el.querySelector('[data-dir="prev"]')?.addEventListener('click', () => {
+          if (meta.page > 1) onPage(meta.page - 1)
+        })
+        el.querySelector('[data-dir="next"]')?.addEventListener('click', () => {
+          if (meta.page < meta.totalPages) onPage(meta.page + 1)
+        })
+      }
+
+
+      function renderConfigForm(cfg) {
+        configDraft = { ...cfg }
+        const { maps, esc } = F()
+        const fields = [
+          { key: 'freeDailyGenerationLimit', type: 'number' },
+          { key: 'proDailyGenerationLimit', type: 'number' },
+          { key: 'freeDailyChatLimit', type: 'number' },
+          { key: 'proDailyChatLimit', type: 'number' },
+          { key: 'jobTimeoutSeconds', cfgKey: 'jobTimeoutMs', type: 'number', transform: 'msToSec' },
+          { key: 'registrationOpen', type: 'checkbox' },
+          { key: 'generationServiceEnabled', type: 'checkbox' },
+          { key: 'chatServiceEnabled', type: 'checkbox' },
+          { key: 'paymentEnabled', type: 'checkbox' },
+          { key: 'mockPaymentEnabled', type: 'checkbox' },
+          { key: 'maintenanceNotice', type: 'textarea', full: true }
+        ]
+        document.getElementById('configForm').innerHTML = fields
+          .map((f) => {
+            const cfgKey = f.cfgKey || f.key
+            const raw = cfg[f.cfgKey]
+            const label = maps.CONFIG_LABEL[f.key] || f.key
+            const hint = maps.CONFIG_HINT[f.key]
+            const hintHtml = hint ? `<span class="field-hint">${esc(hint)}</span>` : ''
+            if (f.type === 'checkbox') {
+              return `<label class="field"><span>${esc(label)}</span>${hintHtml}<input data-cfg="${cfgKey}" type="checkbox" ${raw ? 'checked' : ''} ${canWrite ? '' : 'disabled'} /></label>`
+            }
+            if (f.type === 'textarea') {
+              return `<label class="field" style="grid-column:1/-1"><span>${esc(label)}</span>${hintHtml}<textarea data-cfg="${cfgKey}" ${canWrite ? '' : 'disabled'}>${esc(raw || '')}</textarea></label>`
+            }
+            const val = f.transform === 'msToSec' ? Math.round(Number(raw || 0) / 1000) : raw
+            return `<label class="field"><span>${esc(label)}</span>${hintHtml}<input data-cfg="${cfgKey}" data-transform="${f.transform || ''}" type="number" value="${val}" ${canWrite ? '' : 'disabled'} /></label>`
+          })
+          .join('')
+      }
+
+      async function loadOverview() {
+        const dash = await api('/api/admin/dashboard')
+        document.getElementById('overviewStats').innerHTML = [
+          ['总用户', dash.totalUsers],
+          ['Pro 用户', dash.proUsers],
+          ['今日新注册', dash.todayNewUsers ?? 0],
+          ['今日生成批次', dash.todayBatches ?? 0],
+          ['今日生成任务', dash.todayJobs],
+          ['今日生成成功', dash.todaySuccess],
+          ['今日额度不足', dash.todayQuotaBlocked ?? 0],
+          ['有效兑换码', dash.activeRedeemCodes ?? 0],
+          ['今日对话', dash.todayChats ?? 0],
+          ['对话成功率', (dash.chatSuccessRate ?? 0) + '%'],
+          ['生成成功率', dash.successRate + '%']
+        ]
+          .map(([k, v]) => `<div class="stat"><span class="muted">${k}</span><strong>${v}</strong></div>`)
+          .join('')
+
+        document.getElementById('overviewTrends').innerHTML = `<table><thead><tr><th>日期</th><th>生成成功</th><th>对话成功</th><th>新用户</th></tr></thead><tbody>${
+          (dash.trendLast7Days || [])
+            .map(
+              (d) =>
+                `<tr><td>${F().formatDate(d.date + 'T12:00:00')}</td><td>${d.generations}</td><td>${d.chats}</td><td>${d.newUsers}</td></tr>`
+            )
+            .join('') || '<tr><td colspan="4" class="muted">暂无数据</td></tr>'
+        }</tbody></table>`
+
+        const dist = dash.failureDistribution || {}
+        const distRows = Object.entries(dist).sort((a, b) => b[1] - a[1])
+        document.getElementById('overviewFailures').innerHTML = distRows.length
+          ? `<table><thead><tr><th>失败原因</th><th>次数</th></tr></thead><tbody>${distRows
+              .map(([k, v]) => `<tr><td>${F().errorLabel(k)}<br><span class="muted">${F().esc(k)}</span></td><td>${v}</td></tr>`)
+              .join('')}</tbody></table>`
+          : '<p class="empty">近 7 日无失败记录</p>'
+      }
+
+      async function loadConfig() {
+        const { config } = await api('/api/admin/system/config')
+        renderConfigForm(config)
+      }
+
+      function renderUsersTable(list) {
+        const actionBtns = canWrite
+          ? (u) => `
+              <button class="secondary" data-pro="${u.id}" type="button">开通 Pro</button>
+              <button class="secondary" data-grant="${u.id}" type="button">+5 额度</button>
+              ${
+                u.status === 'active'
+                  ? `<button class="secondary" data-disable="${u.id}" type="button">禁用</button>`
+                  : `<button class="secondary" data-enable="${u.id}" type="button">恢复</button>`
+              }`
+          : () => '<span class="muted">只读</span>'
+        document.getElementById('usersTable').innerHTML = `<table><thead><tr><th>用户</th><th>会员</th><th>状态</th><th>今日已用</th><th>操作</th></tr></thead><tbody>${
+          list.length
+            ? list
+                .map(
+                  (u) => `<tr>
+            <td>${F().esc(u.displayName)}<br><span class="muted">${F().esc(u.email)}</span></td>
+            <td>${F().planBadge(u.plan)}${u.proExpiresAt ? `<br><span class="muted">到期 ${F().formatDate(u.proExpiresAt)}</span>` : ''}</td>
+            <td>${F().userStatusBadge(u.status)}</td>
+            <td>生成 ${u.genUsedToday ?? 0} 次<br><span class="muted">对话 ${u.chatUsedToday ?? 0} 次</span></td>
+            <td>${actionBtns(u)}</td>
+          </tr>`
+                )
+                .join('')
+            : '<tr><td colspan="5" class="empty">没有匹配的用户</td></tr>'
+        }</tbody></table>`
+      }
+
+      async function loadUsers(page = listPages.users) {
+        setTablesLoading(['usersTable'])
+        listPages.users = page
+        const q = (document.getElementById('userSearch')?.value || '').trim()
+        const qs = `${pageQuery(page)}${q ? `&q=${encodeURIComponent(q)}` : ''}`
+        const data = await api(`/api/admin/users?${qs}`)
+        renderUsersTable(data.users)
+        renderPagination('usersPagination', data.pagination, (p) => void loadUsers(p))
+      }
+
+      async function loadDevices(page = listPages.devices) {
+        setTablesLoading(['devicesTable'])
+        listPages.devices = page
+        const data = await api(`/api/admin/devices?${pageQuery(listPages.devices)}`)
+        document.getElementById('devicesTable').innerHTML = `<table><thead><tr><th>用户</th><th>设备</th><th>系统</th><th>标记</th><th>最后活跃</th><th>操作</th></tr></thead><tbody>${
+          data.devices.length
+            ? data.devices
+                .map(
+                  (d) => `<tr>
+            <td>${F().esc(d.userName)}<br><span class="muted">${F().esc(d.userEmail)}</span></td>
+            <td>${F().deviceLabel(d)}</td>
+            <td class="muted">${F().osLabel(d.os, d.osVersion, d.appVersion)}</td>
+            <td>${d.flagged ? F().badge('异常', 'warn') : F().badge('正常', 'ok')}</td>
+            <td class="muted">${F().formatTime(d.lastActiveAt)}</td>
+            <td>${canWrite ? `<button class="secondary" data-flag="${d.id}" data-flagged="${d.flagged}" type="button">${d.flagged ? '取消标记' : '标记异常'}</button>` : '-'}</td>
+          </tr>`
+                )
+                .join('')
+            : '<tr><td colspan="6" class="empty">暂无设备</td></tr>'
+        }</tbody></table>`
+        renderPagination('devicesPagination', data.pagination, (p) => void loadDevices(p))
+      }
+
+      async function loadCommerce(paymentsPage = listPages.payments, codesPage = listPages.codes) {
+        setTablesLoading(['paymentOrders', 'codesTable'])
+        listPages.payments = paymentsPage
+        listPages.codes = codesPage
+        const [payments, codes] = await Promise.all([
+          api(`/api/admin/payment-orders?${pageQuery(paymentsPage)}`),
+          api(`/api/admin/redeem-codes?${pageQuery(codesPage)}`)
+        ])
+        document.getElementById('paymentOrders').innerHTML = `<table><thead><tr><th>用户</th><th>方案</th><th>金额</th><th>状态</th><th>时间</th></tr></thead><tbody>${
+          payments.orders.length
+            ? payments.orders
+                .map(
+                  (o) => `<tr>
+            <td>${F().esc(o.userName)}<br><span class="muted">${F().esc(o.userEmail)}</span></td>
+            <td>${F().esc(o.planName)}</td>
+            <td>¥${(o.amountCents / 100).toFixed(2)}</td>
+            <td>${F().statusBadge(o.status)}</td>
+            <td class="muted">${F().formatTime(o.createdAt)}</td>
+          </tr>`
+                )
+                .join('')
+            : '<tr><td colspan="5" class="empty">暂无订单</td></tr>'
+        }</tbody></table>`
+
+        document.getElementById('codesTable').innerHTML = `<table><thead><tr><th>兑换码</th><th>已用/上限</th><th>状态</th><th>操作</th></tr></thead><tbody>${
+          codes.codes.length
+            ? codes.codes
+                .map(
+                  (c) => `<tr>
+            <td><code>${F().esc(c.code)}</code><br><span class="muted">${F().esc(c.note || '')}</span></td>
+            <td>${c.usedCount} / ${c.maxUses}</td>
+            <td>${c.active ? F().badge('有效', 'ok') : F().badge('停用')}</td>
+            <td>${canWrite ? `<button class="secondary" data-toggle-code="${c.id}" type="button">${c.active ? '停用' : '启用'}</button>` : '-'}</td>
+          </tr>`
+                )
+                .join('')
+            : '<tr><td colspan="4" class="empty">暂无兑换码</td></tr>'
+        }</tbody></table>`
+        renderPagination('paymentPagination', payments.pagination, (p) => void loadCommerce(p, listPages.codes))
+        renderPagination('codesPagination', codes.pagination, (p) => void loadCommerce(listPages.payments, p))
+      }
+
+      async function loadGeneration(batchesPage = listPages.batches, jobsPage = listPages.jobs) {
+        setTablesLoading(['batchesTable', 'jobsTable'])
+        listPages.batches = batchesPage
+        listPages.jobs = jobsPage
+        const [batches, jobs] = await Promise.all([
+          api(`/api/admin/generation/batches?${pageQuery(batchesPage)}`),
+          api(`/api/admin/generation/jobs?${pageQuery(jobsPage)}`)
+        ])
+        document.getElementById('batchesTable').innerHTML = `<table><thead><tr><th>用户</th><th>类型 / 风格</th><th>进度</th><th>状态</th><th>时间</th></tr></thead><tbody>${
+          batches.batches.length
+            ? batches.batches
+                .map(
+                  (b) => `<tr>
+            <td>${F().esc(b.userName)}<br><span class="muted">${F().esc(b.userEmail)}</span></td>
+            <td>${F().pick(F().maps.JOB_TYPE, b.jobType)}<br><span class="muted">${F().pick(F().maps.STYLE, b.styleType)}</span></td>
+            <td>${b.posesSucceeded} / ${b.posesTotal} 张</td>
+            <td>${F().statusBadge(b.status)}</td>
+            <td class="muted">${F().formatTime(b.createdAt)}</td>
+          </tr>`
+                )
+                .join('')
+            : '<tr><td colspan="5" class="empty">暂无批次</td></tr>'
+        }</tbody></table>`
+
+        document.getElementById('jobsTable').innerHTML = `<table><thead><tr><th>用户</th><th>状态</th><th>类型 / 风格 / 姿势</th><th>预览</th><th>失败原因</th><th>耗时</th><th>时间</th></tr></thead><tbody>${
+          jobs.jobs.length
+            ? jobs.jobs
+                .map(
+                  (j) => `<tr>
+            <td>${F().esc(j.userName)}<br><span class="muted">${F().esc(j.userEmail)}</span></td>
+            <td>${F().statusBadge(j.status)}</td>
+            <td>${F().pick(F().maps.JOB_TYPE, j.jobType || '—')}<br><span class="muted">${F().pick(F().maps.STYLE, j.styleType)} · ${F().pick(F().maps.POSE, j.pose)}</span></td>
+            <td>${j.rawOutputUrl ? `<a href="${j.rawOutputUrl}" target="_blank" rel="noreferrer" title="查看大图"><img class="thumb" src="${j.rawOutputUrl}" alt="生成图" /></a>` : '—'}</td>
+            <td class="muted">${j.status === 'failed' ? F().friendlyError(j.errorCode, j.errorMessage) : '—'}</td>
+            <td class="muted">${F().formatDuration(j.durationMs)}</td>
+            <td class="muted">${F().formatTime(j.createdAt)}</td>
+          </tr>`
+                )
+                .join('')
+            : '<tr><td colspan="7" class="empty">暂无任务</td></tr>'
+        }</tbody></table>`
+        renderPagination('batchesPagination', batches.pagination, (p) => void loadGeneration(p, listPages.jobs))
+        renderPagination('jobsPagination', jobs.pagination, (p) => void loadGeneration(listPages.batches, p))
+      }
+
+      async function loadLogs(chatPage = listPages.chat, auditPage = listPages.audit, loginPage = listPages.login) {
+        setTablesLoading(['chatLogs', 'auditLogs', 'loginLogs'])
+        listPages.chat = chatPage
+        listPages.audit = auditPage
+        listPages.login = loginPage
+        const [chatLogs, audit, loginLogs] = await Promise.all([
+          api(`/api/admin/chat/logs?${pageQuery(chatPage)}`),
+          api(`/api/admin/audit-logs?${pageQuery(auditPage)}`),
+          api(`/api/admin/login-logs?${pageQuery(loginPage)}`)
+        ])
+        document.getElementById('chatLogs').innerHTML = `<table><thead><tr><th>用户</th><th>状态</th><th>宠物</th><th>字数</th><th>耗时</th><th>时间</th></tr></thead><tbody>${
+          chatLogs.logs.length
+            ? chatLogs.logs
+                .map(
+                  (l) => `<tr>
+            <td>${F().esc(l.userName)}<br><span class="muted">${F().esc(l.userEmail)}</span></td>
+            <td>${F().statusBadge(l.status)}</td>
+            <td>${F().esc(l.petName || '—')}<br><span class="muted">${F().esc(l.personality || '')}</span></td>
+            <td>输入 ${l.inputChars} · 回复 ${l.outputChars}</td>
+            <td>${F().formatDuration(l.durationMs)}</td>
+            <td class="muted">${F().formatTime(l.createdAt)}</td>
+          </tr>`
+                )
+                .join('')
+            : '<tr><td colspan="6" class="empty">暂无对话</td></tr>'
+        }</tbody></table>`
+
+        document.getElementById('auditLogs').innerHTML = `<table><thead><tr><th>管理员</th><th>操作</th><th>目标</th><th>详情</th><th>时间</th></tr></thead><tbody>${
+          audit.logs.length
+            ? audit.logs
+                .map(
+                  (l) => `<tr>
+            <td>${F().esc(l.adminEmail)}</td>
+            <td>${F().pick(F().maps.AUDIT_ACTION, l.action)}</td>
+            <td class="muted">${F().pick(F().maps.TARGET_TYPE, l.targetType, '—')}<br><span class="muted">${F().shortId(l.targetId)}</span></td>
+            <td class="muted">${F().formatAuditDetail(l.detail)}</td>
+            <td class="muted">${F().formatTime(l.createdAt)}</td>
+          </tr>`
+                )
+                .join('')
+            : '<tr><td colspan="5" class="empty">暂无审计记录</td></tr>'
+        }</tbody></table>`
+
+        document.getElementById('loginLogs').innerHTML = `<table><thead><tr><th>邮箱</th><th>IP</th><th>结果</th><th>时间</th></tr></thead><tbody>${
+          loginLogs.logs.length
+            ? loginLogs.logs
+                .map(
+                  (l) => `<tr>
+            <td>${F().esc(l.email)}</td>
+            <td class="muted">${F().esc(l.ip || '—')}</td>
+            <td>${l.success ? F().badge('成功', 'ok') : F().badge('失败', 'warn')}</td>
+            <td class="muted">${F().formatTime(l.createdAt)}</td>
+          </tr>`
+                )
+                .join('')
+            : '<tr><td colspan="4" class="empty">暂无登录记录</td></tr>'
+        }</tbody></table>`
+        renderPagination('chatPagination', chatLogs.pagination, (p) => void loadLogs(p, listPages.audit, listPages.login))
+        renderPagination('auditPagination', audit.pagination, (p) => void loadLogs(listPages.chat, p, listPages.login))
+        renderPagination('loginPagination', loginLogs.pagination, (p) => void loadLogs(listPages.chat, listPages.audit, p))
+      }
+
+      const viewLoaders = {
+        overview: loadOverview,
+        config: loadConfig,
+        users: loadUsers,
+        devices: loadDevices,
+        commerce: loadCommerce,
+        generation: loadGeneration,
+        logs: loadLogs
+      }
+
+      async function loadView(viewId, force = false) {
+        if (!force && loadedViews.has(viewId)) return
+        const loader = viewLoaders[viewId]
+        if (!loader) return
+        const subtitle = document.getElementById('viewSubtitle')
+        const refreshBtn = document.getElementById('refreshBtn')
+        const prevSubtitle = subtitle.textContent
+        subtitle.textContent = '加载中…'
+        refreshBtn.disabled = true
+        try {
+          await loader()
+          loadedViews.add(viewId)
+        } catch (e) {
+          showToast(e.message || '加载失败', 'error')
+        } finally {
+          subtitle.textContent = viewMeta[viewId]?.subtitle || prevSubtitle
+          refreshBtn.disabled = false
+        }
+      }
+
+      async function bootstrapApp() {
+        const me = await api('/api/admin/me')
+        adminRole = me.role
+        applyWriteMode()
+        loadedViews.clear()
+        await loadView(currentView, true)
+      }
+
+      async function submitLogin() {
+        const email = document.getElementById('adminEmail').value.trim()
+        const password = document.getElementById('adminPassword').value
+        const loginBtn = document.getElementById('loginBtn')
+        if (!email || !password) {
+          showLogin('请填写邮箱和密码。')
+          return
+        }
+        loginBtn.disabled = true
+        loginBtn.textContent = '登录中…'
+        try {
+          const data = await api('/api/admin/login', {
+            method: 'POST',
+            skipAuth: true,
+            json: { email, password }
+          })
+          if (!data.success || !data.accessToken) throw new Error(data.message || '登录失败')
+          setToken(data.accessToken)
+          showApp()
+          await bootstrapApp()
+        } catch (e) {
+          showLogin(e.message || '登录失败，请重试。')
+        } finally {
+          loginBtn.disabled = false
+          loginBtn.textContent = '登录'
+        }
+      }
+
+      document.getElementById('loginBtn').onclick = () => submitLogin()
+      document.getElementById('adminPassword').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitLogin()
+      })
+      document.getElementById('adminEmail').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitLogin()
+      })
+      document.getElementById('logoutBtn').onclick = () => showLogin()
+      document.getElementById('refreshBtn').onclick = () => {
+        loadedViews.delete(currentView)
+        loadView(currentView, true).catch((e) => showToast(e.message || '刷新失败', 'error'))
+      }
+
+      document.getElementById('userSearch')?.addEventListener('input', () => {
+        clearTimeout(userSearchTimer)
+        userSearchTimer = setTimeout(() => {
+          listPages.users = 1
+          void loadUsers(1)
+        }, 300)
+      })
+
+      document.querySelectorAll('.nav-item').forEach((btn) => {
+        btn.addEventListener('click', () => setView(btn.dataset.view))
+      })
+
+      document.querySelectorAll('[data-gen-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-gen-tab]').forEach((b) => b.classList.toggle('active', b === btn))
+          document.getElementById('gen-batches').classList.toggle('active', btn.dataset.genTab === 'batches')
+          document.getElementById('gen-jobs').classList.toggle('active', btn.dataset.genTab === 'jobs')
+        })
+      })
+
+      document.querySelectorAll('[data-log-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-log-tab]').forEach((b) => b.classList.toggle('active', b === btn))
+          ;['chat', 'audit', 'login'].forEach((id) => {
+            document.getElementById(`log-${id}`).classList.toggle('active', btn.dataset.logTab === id)
+          })
+        })
+      })
+
+      document.getElementById('saveConfigBtn').onclick = async () => {
+        const err = document.getElementById('configErr')
+        err.classList.add('hidden')
+        try {
+          const patch = {}
+          document.querySelectorAll('[data-cfg]').forEach((el) => {
+            const key = el.dataset.cfg
+            if (el.type === 'checkbox') patch[key] = el.checked
+            else if (el.type === 'number') {
+              const n = Number(el.value)
+              patch[key] = el.dataset.transform === 'msToSec' ? n * 1000 : n
+            } else patch[key] = el.value
+          })
+          await api('/api/admin/system/config', { method: 'PATCH', json: patch })
+          loadedViews.delete('config')
+          await loadView('config', true)
+          showToast('配置已保存')
+        } catch (e) {
+          err.textContent = e.message
+          err.classList.remove('hidden')
+          showToast(e.message || '保存失败', 'error')
+        }
+      }
+
+      document.getElementById('createCodeBtn').onclick = async () => {
+        try {
+          await api('/api/admin/redeem-codes', {
+            method: 'POST',
+            json: {
+              code: document.getElementById('newCode').value,
+              maxUses: Number(document.getElementById('newCodeUses').value) || 10
+            }
+          })
+          document.getElementById('newCode').value = ''
+          loadedViews.delete('commerce')
+          await loadView('commerce', true)
+          showToast('兑换码已创建')
+        } catch (e) {
+          showToast(e.message || '创建失败', 'error')
+        }
+      }
+
+      document.body.addEventListener('click', async (e) => {
+        const t = e.target
+        if (!(t instanceof HTMLButtonElement)) return
+        if (!canWrite || !getToken()) return
+        let successMsg = null
+        try {
+          if (t.dataset.pro) {
+            await api(`/api/admin/users/${t.dataset.pro}/pro/activate`, { method: 'POST', json: {} })
+            successMsg = '已开通 Pro'
+          }
+          if (t.dataset.grant) {
+            await api(`/api/admin/users/${t.dataset.grant}/quota/grant`, { method: 'POST', json: { amount: 5, reason: 'admin panel' } })
+            successMsg = '已赠送 5 次额度'
+          }
+          if (t.dataset.disable) {
+            await api(`/api/admin/users/${t.dataset.disable}/disable`, { method: 'POST' })
+            successMsg = '已禁用用户'
+          }
+          if (t.dataset.enable) {
+            await api(`/api/admin/users/${t.dataset.enable}/enable`, { method: 'POST' })
+            successMsg = '已恢复用户'
+          }
+          if (t.dataset.toggleCode) {
+            await api(`/api/admin/redeem-codes/${t.dataset.toggleCode}/toggle`, { method: 'POST' })
+            successMsg = '兑换码状态已更新'
+          }
+          if (t.dataset.flag) {
+            const nextFlagged = t.dataset.flagged !== 'true'
+            await api(`/api/admin/devices/${t.dataset.flag}/flag`, {
+              method: 'POST',
+              json: { flagged: nextFlagged }
+            })
+            successMsg = nextFlagged ? '已标记为异常设备' : '已取消设备标记'
+          }
+          if (successMsg) {
+            loadedViews.delete(currentView)
+            if (t.dataset.flag) loadedViews.delete('devices')
+            if (t.dataset.pro || t.dataset.grant || t.dataset.disable || t.dataset.enable) loadedViews.delete('users')
+            if (t.dataset.toggleCode) loadedViews.delete('commerce')
+            await loadView(currentView, true)
+            showToast(successMsg)
+          }
+        } catch (err) {
+          showToast(err.message || '操作失败', 'error')
+        }
+      })
+
+      authToken = localStorage.getItem(tokenKey)
+      if (authToken) {
+        showApp()
+        bootstrapApp().catch((e) => showLogin(e.message || '登录已过期，请重新登录。'))
+      }
+    </script>
+  </body>
+</html>

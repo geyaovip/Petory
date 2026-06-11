@@ -1,0 +1,22 @@
+{
+  "version": "2.4.0",
+  "releasedAt": "2026-06-11",
+  "mac": {
+    "fileName": "Petory-2.4.0-mac.dmg",
+    "url": "https://github.com/petory-app/petory/releases/download/v2.4.0/Petory-2.4.0-mac.dmg",
+    "sizeLabel": "~120 MB"
+  },
+  "win": {
+    "fileName": "Petory Setup 2.4.0.exe",
+    "url": "https://github.com/petory-app/petory/releases/download/v2.4.0/Petory-Setup-2.4.0.exe",
+    "sizeLabel": "~100 MB"
+  },
+  "updateFeed": "https://petory.chat/releases",
+  "changelog": [
+    "透明像素精细命中：只有点到宠物本体才响应，其余区域穿透",
+    "同伴宠点击可短暂切换开心姿势；主宠状态音效（设置中开启）",
+    "宠物管理支持单姿势重生成，不消耗每日生成额度",
+    "成长页：小成就徽章、最近互动、姿势数量",
+    "导出包增强（云同步预留）"
+  ]
+}

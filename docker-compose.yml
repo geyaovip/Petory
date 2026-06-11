@@ -1,0 +1,68 @@
+# Petory 本地 Docker
+#
+# 默认（无需拉 node 镜像、无需 build）：
+#   npm run docker:up     → postgres + 官网
+#   npm run server:dev    → 本机 API / 管理端 :8787
+#
+# 可选：API 也进 Docker（需能访问 Docker Hub 拉 node:20-alpine）
+#   npm run docker:up:api
+#
+# 地址：
+#   管理端  http://localhost:8787/admin/
+#   官网    http://localhost:5180/
+#   Postgres localhost:5433
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: petory-postgres
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: petory
+      POSTGRES_PASSWORD: petory
+      POSTGRES_DB: petory
+    volumes:
+      - petory_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U petory -d petory']
+      interval: 5s
+      timeout: 5s
+      retries: 8
+
+  website:
+    image: nginx:alpine
+    container_name: petory-website
+    restart: unless-stopped
+    ports:
+      - '5180:80'
+    volumes:
+      - ./website:/usr/share/nginx/html:ro
+
+  # 可选 profile：docker compose --profile api up -d --build
+  api:
+    profiles: ['api']
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: petory-api
+    restart: unless-stopped
+    ports:
+      - '8787:8787'
+    env_file:
+      - server/.env
+    environment:
+      DATABASE_URL: postgresql://petory:petory@postgres:5432/petory?schema=public
+      PUBLIC_BASE_URL: http://localhost:8787
+    volumes:
+      - ./server/uploads:/app/server/uploads
+      - ./server/src:/app/server/src
+      - ./server/admin:/app/server/admin
+      - ./src/shared:/app/src/shared
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  petory_pg_data:
