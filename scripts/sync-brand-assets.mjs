@@ -8,10 +8,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 const srcDir = path.join(root, 'petory_logo')
 
+/** Single source of truth — do not add duplicate packs under resources/. */
 const sources = {
-  primary: '01_petory_primary_logo_transparent.png',
-  appIcon: '03_petory_app_icon_transparent.png',
-  avatar: '05_petory_social_avatar_transparent.png'
+  wordmark: '01_petory_primary_logo_transparent.png',
+  appIcon: '03_petory_app_icon_transparent.png'
 }
 
 const TRIM_THRESHOLD = 12
@@ -29,6 +29,35 @@ async function writeTrimmedPng(fromName, toPath) {
   console.log(`✓ ${toPath}`)
 }
 
+async function trimmedAppIconBuffer() {
+  return sharp(path.join(srcDir, sources.appIcon))
+    .trim({ threshold: TRIM_THRESHOLD })
+    .png()
+    .toBuffer()
+}
+
+/** Trim transparent margins, then scale to fit — no zoom/crop. Shared by favicon + build icons. */
+async function writeSquareIcon(trimmed, dest, size) {
+  await sharp(trimmed)
+    .resize(size, size, { fit: 'contain', background: TRANSPARENT })
+    .png()
+    .toFile(dest)
+}
+
+async function writeFaviconSet(trimmed, outDir) {
+  fs.mkdirSync(outDir, { recursive: true })
+  for (const size of [16, 32, 48]) {
+    const dest = path.join(outDir, `favicon-${size}.png`)
+    await writeSquareIcon(trimmed, dest, size)
+    console.log(`✓ ${path.relative(root, dest)}`)
+  }
+  const appleTouch = path.join(outDir, 'apple-touch-icon.png')
+  await writeSquareIcon(trimmed, appleTouch, 180)
+  console.log(`✓ ${path.relative(root, appleTouch)}`)
+  await fs.promises.copyFile(path.join(outDir, 'favicon-32.png'), path.join(outDir, 'favicon.png'))
+  console.log(`✓ ${path.relative(root, path.join(outDir, 'favicon.png'))}`)
+}
+
 for (const file of Object.values(sources)) {
   const full = path.join(srcDir, file)
   if (!fs.existsSync(full)) {
@@ -37,50 +66,26 @@ for (const file of Object.values(sources)) {
   }
 }
 
-await writeTrimmedPng(sources.primary, 'website/assets/logo.png')
-await writeTrimmedPng(sources.primary, 'src/renderer/public/logo.png')
-await writeTrimmedPng(sources.primary, 'server/admin/public/logo.png')
-await writeTrimmedPng(sources.appIcon, 'server/admin/public/app-icon.png')
-await writeTrimmedPng(sources.appIcon, 'website/assets/app-icon.png')
-await writeTrimmedPng(sources.appIcon, 'src/renderer/public/app-icon.png')
-await writeTrimmedPng(sources.avatar, 'website/assets/avatar.png')
-
-/** Trim transparent margins, then scale to fit — no zoom/crop. */
-async function writeFavicon(source, dest, size) {
-  const trimmed = await sharp(source).trim({ threshold: TRIM_THRESHOLD }).png().toBuffer()
-  await sharp(trimmed)
-    .resize(size, size, { fit: 'contain', background: TRANSPARENT })
-    .png()
-    .toFile(dest)
+const wordmarkTargets = [
+  'website/assets/logo.png',
+  'src/renderer/public/logo.png',
+  'server/admin/public/logo.png'
+]
+for (const target of wordmarkTargets) {
+  await writeTrimmedPng(sources.wordmark, target)
 }
 
-async function writeFaviconSet(source, outDir) {
-  fs.mkdirSync(outDir, { recursive: true })
-  for (const size of [16, 32, 48]) {
-    const dest = path.join(outDir, `favicon-${size}.png`)
-    await writeFavicon(source, dest, size)
-    console.log(`✓ ${path.relative(root, dest)}`)
-  }
-  const appleTouch = path.join(outDir, 'apple-touch-icon.png')
-  await writeFavicon(source, appleTouch, 180)
-  console.log(`✓ ${path.relative(root, appleTouch)}`)
-  await fs.promises.copyFile(path.join(outDir, 'favicon-32.png'), path.join(outDir, 'favicon.png'))
-  console.log(`✓ ${path.relative(root, path.join(outDir, 'favicon.png'))}`)
-}
+const appIconTrimmed = await trimmedAppIconBuffer()
 
-const appIconSrc = path.join(srcDir, sources.appIcon)
-await writeFaviconSet(appIconSrc, path.join(root, 'website'))
-await writeFaviconSet(appIconSrc, path.join(root, 'src/renderer/public'))
-await writeFaviconSet(appIconSrc, path.join(root, 'server/admin/public'))
+await writeFaviconSet(appIconTrimmed, path.join(root, 'website'))
+await writeFaviconSet(appIconTrimmed, path.join(root, 'src/renderer/public'))
+await writeFaviconSet(appIconTrimmed, path.join(root, 'server/admin/public'))
 
 const buildDir = path.join(root, 'build')
 fs.mkdirSync(buildDir, { recursive: true })
+
 const iconPng = path.join(buildDir, 'icon.png')
-await sharp(path.join(srcDir, sources.appIcon))
-  .trim({ threshold: TRIM_THRESHOLD })
-  .resize(1024, 1024, { fit: 'contain', background: TRANSPARENT })
-  .png()
-  .toFile(iconPng)
+await writeSquareIcon(appIconTrimmed, iconPng, 1024)
 console.log('✓ build/icon.png')
 
 const iconset = path.join(buildDir, 'icon.iconset')
@@ -92,8 +97,8 @@ fs.mkdirSync(iconset, { recursive: true })
 for (const size of [16, 32, 128, 256, 512]) {
   const out1 = path.join(iconset, `icon_${size}x${size}.png`)
   const out2 = path.join(iconset, `icon_${size}x${size}@2x.png`)
-  execSync(`sips -z ${size} ${size} "${iconPng}" --out "${out1}"`, { stdio: 'inherit' })
-  execSync(`sips -z ${size * 2} ${size * 2} "${iconPng}" --out "${out2}"`, { stdio: 'inherit' })
+  await writeSquareIcon(appIconTrimmed, out1, size)
+  await writeSquareIcon(appIconTrimmed, out2, size * 2)
 }
 
 try {
