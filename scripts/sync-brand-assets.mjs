@@ -51,37 +51,49 @@ async function trimmedAppIconBuffer() {
     .toBuffer()
 }
 
-async function sampleAppIconBackground(trimmed) {
+/** Source PNG stores RGB=255 in transparent pixels — must not use for flatten. */
+async function sampleAppIconBlue(trimmed) {
   const { data, info } = await sharp(trimmed).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
-  const x = Math.min(12, info.width - 1)
-  const y = Math.min(12, info.height - 1)
-  const i = (y * info.width + x) * info.channels
-  return { r: data[i], g: data[i + 1], b: data[i + 2], alpha: 255 }
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      const i = (y * info.width + x) * info.channels
+      if (data[i + 3] > 128) {
+        return { r: data[i], g: data[i + 1], b: data[i + 2], alpha: 255 }
+      }
+    }
+  }
+  return { r: 70, g: 150, b: 253, alpha: 255 }
 }
 
-/** All app-icon outputs: solid blue fill, no transparent halo; modest zoom for legibility. */
-async function writeAppIconRaster(trimmed, dest, size, background) {
+function zoomedPipeline(trimmed, size) {
   const zoom = zoomForSize(size)
   const zoomed = Math.max(size, Math.round(size * zoom))
   const offset = Math.max(0, Math.round((zoomed - size) / 2))
 
-  await sharp(trimmed)
+  return sharp(trimmed)
     .resize(zoomed, zoomed, { fit: 'cover', position: 'centre' })
     .extract({ left: offset, top: offset, width: size, height: size })
-    .flatten({ background })
-    .png()
-    .toFile(dest)
+}
+
+/** Dock / installer / runtime: keep squircle alpha (transparent outer corners). */
+async function writeAppIconAlpha(trimmed, dest, size) {
+  await zoomedPipeline(trimmed, size).png().toFile(dest)
+}
+
+/** Browser tab favicons: solid blue tile for legibility at 16–48px. */
+async function writeFaviconSolid(trimmed, dest, size, background) {
+  await zoomedPipeline(trimmed, size).flatten({ background }).png().toFile(dest)
 }
 
 async function writeFaviconSet(trimmed, background, outDir) {
   fs.mkdirSync(outDir, { recursive: true })
   for (const size of [16, 32, 48]) {
     const dest = path.join(outDir, `favicon-${size}.png`)
-    await writeAppIconRaster(trimmed, dest, size, background)
+    await writeFaviconSolid(trimmed, dest, size, background)
     console.log(`✓ ${path.relative(root, dest)}`)
   }
   const appleTouch = path.join(outDir, 'apple-touch-icon.png')
-  await writeAppIconRaster(trimmed, appleTouch, 180, background)
+  await writeAppIconAlpha(trimmed, appleTouch, 180)
   console.log(`✓ ${path.relative(root, appleTouch)}`)
   await fs.promises.copyFile(path.join(outDir, 'favicon-32.png'), path.join(outDir, 'favicon.png'))
   console.log(`✓ ${path.relative(root, path.join(outDir, 'favicon.png'))}`)
@@ -105,17 +117,17 @@ for (const target of wordmarkTargets) {
 }
 
 const appIconTrimmed = await trimmedAppIconBuffer()
-const appIconBackground = await sampleAppIconBackground(appIconTrimmed)
+const appIconBlue = await sampleAppIconBlue(appIconTrimmed)
 
-await writeFaviconSet(appIconTrimmed, appIconBackground, path.join(root, 'website'))
-await writeFaviconSet(appIconTrimmed, appIconBackground, path.join(root, 'src/renderer/public'))
-await writeFaviconSet(appIconTrimmed, appIconBackground, path.join(root, 'server/admin/public'))
+await writeFaviconSet(appIconTrimmed, appIconBlue, path.join(root, 'website'))
+await writeFaviconSet(appIconTrimmed, appIconBlue, path.join(root, 'src/renderer/public'))
+await writeFaviconSet(appIconTrimmed, appIconBlue, path.join(root, 'server/admin/public'))
 
 const buildDir = path.join(root, 'build')
 fs.mkdirSync(buildDir, { recursive: true })
 
 const iconPng = path.join(buildDir, 'icon.png')
-await writeAppIconRaster(appIconTrimmed, iconPng, 1024, appIconBackground)
+await writeAppIconAlpha(appIconTrimmed, iconPng, 1024)
 console.log('✓ build/icon.png')
 
 const iconset = path.join(buildDir, 'icon.iconset')
@@ -127,8 +139,8 @@ fs.mkdirSync(iconset, { recursive: true })
 for (const size of [16, 32, 128, 256, 512]) {
   const out1 = path.join(iconset, `icon_${size}x${size}.png`)
   const out2 = path.join(iconset, `icon_${size}x${size}@2x.png`)
-  await writeAppIconRaster(appIconTrimmed, out1, size, appIconBackground)
-  await writeAppIconRaster(appIconTrimmed, out2, size * 2, appIconBackground)
+  await writeAppIconAlpha(appIconTrimmed, out1, size)
+  await writeAppIconAlpha(appIconTrimmed, out2, size * 2)
 }
 
 try {

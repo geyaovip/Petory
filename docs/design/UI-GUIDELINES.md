@@ -527,10 +527,11 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 | 派生资产 | 场景 |
 |----------|------|
 | `logo.png` | 官网导航、客户端登录、管理端登录/侧栏（高度 44–56px） |
-| `favicon-*.png` / `apple-touch-icon.png` | 官网与客户端 HTML 标签图标 |
-| `build/icon.png` / `icon.icns` | electron-builder 安装包与系统 Dock/任务栏 |
+| `favicon-16/32/48.png` | 浏览器标签（**实色蓝底** 小图，避免透明区 RGB 脏数据） |
+| `apple-touch-icon.png` | 客户端 Dock 运行时图标（**保留透明圆角**） |
+| `build/icon.png` / `icon.icns` | 安装包与系统图标（**保留透明圆角**，与源图 squircle 一致） |
 
-以上 app-icon 派生图统一为 **实色蓝底、无透明角**，并按尺寸轻微放大以提升小图标可读性。
+源图透明像素含 `RGB(255,255,255,0)` 时不得直接 `flatten`，须先采样不透明蓝色像素。
 
 **图标分工（必须遵守）：**
 - **登录页 / 导航** → 横版 `logo.png`
