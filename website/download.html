@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="下载 Petory for macOS and Windows." />
+    <meta
+      name="description"
+      content="下载 Petory 桌面客户端，支持 macOS 与 Windows。上传照片，让桌宠住进你的电脑。"
+    />
     <title>下载 Petory</title>
     <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
@@ -20,14 +23,15 @@
         <div class="nav-links">
           <a href="index.html">首页</a>
           <a href="download.html">下载</a>
+          <a href="privacy.html">隐私</a>
           <a href="terms.html">协议</a>
         </div>
-        <a class="btn btn-primary" href="#mac">下载</a>
+        <a class="btn btn-primary" href="#mac">免费下载</a>
       </nav>
 
       <section class="hero hero-compact">
         <h1>下载 Petory</h1>
-        <p>选择你的系统，安装后即可创建桌宠或先体验示例宠物。</p>
+        <p>选择你的系统，安装后即可创建桌宠，或先体验示例宠物。</p>
         <p class="version-line">
           当前版本 <strong id="release-version">—</strong>
         </p>
@@ -42,10 +46,40 @@
         </article>
         <article class="download-card" id="win">
           <h2>Windows</h2>
-          <p>适用于 Windows 10 / 11 的安装包。</p>
+          <p>适用于 Windows 10 / 11（64 位）的安装包。</p>
           <a class="btn btn-primary" id="win-download" href="#">下载 Windows 版</a>
           <p class="download-meta" id="win-meta">正在获取下载链接…</p>
         </article>
+      </section>
+
+      <section class="requirements" id="requirements">
+        <h2>系统要求</h2>
+        <div class="requirements-grid">
+          <article>
+            <h3>macOS</h3>
+            <ul>
+              <li>macOS 12 Monterey 或更高版本</li>
+              <li>Apple Silicon 或 Intel（Universal 安装包）</li>
+              <li>约 200 MB 可用磁盘空间</li>
+            </ul>
+          </article>
+          <article>
+            <h3>Windows</h3>
+            <ul>
+              <li>Windows 10 / 11，64 位系统</li>
+              <li>约 150 MB 可用磁盘空间</li>
+              <li>建议开启显卡硬件加速以获得更流畅动画</li>
+            </ul>
+          </article>
+          <article>
+            <h3>通用</h3>
+            <ul>
+              <li>登录账号、生成桌宠与 AI 对话需要网络连接</li>
+              <li>首次使用可先体验示例宠物，无需上传照片</li>
+              <li>在应用「设置 → 更新」中可检查新版本</li>
+            </ul>
+          </article>
+        </div>
       </section>
 
       <section class="card card-muted">
@@ -53,15 +87,23 @@
         <ul class="simple-list">
           <li>首次打开可体验示例宠物，或上传自己的照片创建桌宠</li>
           <li>登录账号后可同步每日生成与对话额度</li>
-          <li>在「设置 → 更新」中检查新版本</li>
+          <li>右键点击桌宠可打开聊天、专注与更多功能</li>
         </ul>
       </section>
 
       <footer class="footer">
-        <p><a href="index.html">返回首页</a></p>
+        <p>© 2026 Petory</p>
+        <p class="footer-links">
+          <a href="privacy.html">隐私政策</a>
+          <span>·</span>
+          <a href="terms.html">用户协议</a>
+          <span>·</span>
+          <a href="download.html">下载</a>
+        </p>
       </footer>
     </div>
 
+    <script src="site.js"></script>
     <script src="download.js"></script>
   </body>
 </html>

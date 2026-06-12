@@ -3,14 +3,27 @@
   --primary-hover: #ff6b5e;
   --primary-soft: #ffe8e4;
   --accent: #7ec8e3;
+  --accent-soft: #e8f6fc;
+  --accent-strong: #3a8fb5;
   --bg: #fafaf8;
   --surface: #ffffff;
+  --muted: #f5f4f2;
+  --track: #f0eeea;
   --border: #e8e6e1;
+  --border-strong: #d4d1ca;
   --text: #2d2a26;
   --text-secondary: #6b6560;
   --text-tertiary: #9c958e;
+  --success: #6bc9a8;
+  --success-soft: #e8f7f0;
+  --warning: #e8a838;
+  --warning-soft: #fff8e8;
+  --error: #e85d5d;
+  --error-soft: #fdecec;
   --shadow: 0 12px 40px rgba(45, 42, 38, 0.08);
-  --radius: 16px;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
 }
 
 * {
@@ -65,6 +78,11 @@ a {
   color: var(--text);
 }
 
+.nav-links a.is-active {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -101,8 +119,15 @@ a {
 }
 
 .btn-secondary:hover {
-  border-color: #d4d1ca;
-  background: #f5f4f2;
+  border-color: var(--border-strong);
+  background: var(--muted);
+}
+
+.btn-disabled,
+.btn-primary.btn-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 .btn:active {
@@ -164,7 +189,7 @@ a {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow);
 }
@@ -190,7 +215,7 @@ a {
 .download-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   padding: 28px;
   box-shadow: var(--shadow);
 }
@@ -214,7 +239,7 @@ a {
 
 .note {
   background: var(--primary-soft);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   padding: 16px 20px;
   font-size: 13px;
   color: var(--text-secondary);
@@ -241,7 +266,7 @@ a {
   margin-bottom: 24px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
 }
 
@@ -281,6 +306,73 @@ a {
 
 .footer-links a:hover {
   color: var(--text);
+}
+
+.page-legal {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-bottom: 48px;
+}
+
+.page-legal .hero-compact {
+  padding-top: 24px;
+}
+
+.page-legal h1 {
+  font-size: 32px;
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+
+.page-legal h2 {
+  font-size: 18px;
+  margin-top: 32px;
+  margin-bottom: 8px;
+}
+
+.page-legal p,
+.page-legal li {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.page-legal ul {
+  padding-left: 20px;
+}
+
+.requirements {
+  margin-bottom: 32px;
+}
+
+.requirements h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.requirements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.requirements-grid article {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.requirements-grid h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.requirements-grid ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 @media (max-width: 640px) {

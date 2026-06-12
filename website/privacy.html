@@ -3,46 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Petory 隐私政策 — 我们如何收集、使用与保护你的数据。" />
     <title>隐私政策 — Petory</title>
     <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <link rel="stylesheet" href="styles.css" />
-    <style>
-      .legal {
-        max-width: 720px;
-        margin: 0 auto 96px;
-        padding-top: 24px;
-      }
-      .legal h1 {
-        font-size: 32px;
-        margin-bottom: 8px;
-      }
-      .legal h2 {
-        font-size: 18px;
-        margin-top: 32px;
-      }
-      .legal p,
-      .legal li {
-        color: var(--text-secondary);
-        font-size: 14px;
-      }
-      .legal ul {
-        padding-left: 20px;
-      }
-    </style>
   </head>
   <body>
-    <div class="container legal">
+    <div class="container page-legal">
       <nav class="nav">
         <a class="logo" href="index.html">
           <img src="assets/logo.png" alt="Petory" height="56" />
         </a>
         <div class="nav-links">
-          <a href="terms.html">用户协议</a>
-          <a href="privacy.html">隐私政策</a>
+          <a href="index.html">首页</a>
+          <a href="download.html">下载</a>
+          <a href="privacy.html">隐私</a>
+          <a href="terms.html">协议</a>
         </div>
+        <a class="btn btn-primary" href="download.html">免费下载</a>
       </nav>
 
       <h1>隐私政策</h1>
@@ -53,11 +34,11 @@
       <ul>
         <li>你上传的图片与生成的桌宠文件</li>
         <li>聊天记录、成长与专注数据</li>
-        <li>应用设置与（若使用）本地演示账号信息</li>
+        <li>应用设置与账号登录状态</li>
       </ul>
       <p>
-        当你使用 AI 生成或对话功能时，相关图片/文本会发送至你配置的 MiniMax、Kimi
-        等第三方 API。请查阅对应服务商的隐私政策。
+        当你使用 AI 生成或对话功能时，相关图片与文本会发送至服务端或你配置的第三方
+        AI 服务。请同时查阅对应服务商的隐私政策。
       </p>
 
       <h2>崩溃日志（可选）</h2>
@@ -70,13 +51,19 @@
       <p>你可在「设置 → 数据与隐私」中导出、清除聊天记录或删除全部本地数据。</p>
 
       <h2>联系我们</h2>
-      <p>
-        如有隐私相关问题，请通过应用内反馈入口或 GitHub Issues 联系我们。
-      </p>
+      <p>如有隐私相关问题，请通过应用内反馈入口联系我们。</p>
 
       <footer class="footer">
-        <p><a href="index.html">返回首页</a></p>
+        <p>© 2026 Petory</p>
+        <p class="footer-links">
+          <a href="privacy.html">隐私政策</a>
+          <span>·</span>
+          <a href="terms.html">用户协议</a>
+          <span>·</span>
+          <a href="download.html">下载</a>
+        </p>
       </footer>
     </div>
+    <script src="site.js"></script>
   </body>
 </html>

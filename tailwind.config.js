@@ -6,7 +6,7 @@ export default {
       colors: {
         petory: {
           primary: { DEFAULT: '#FF8A7A', hover: '#FF6B5E', soft: '#FFE8E4', light: '#FFB89E' },
-          accent: { DEFAULT: '#7EC8E3', soft: '#E8F6FC' },
+          accent: { DEFAULT: '#7EC8E3', soft: '#E8F6FC', strong: '#3A8FB5' },
           bg: '#FAFAF8',
           surface: '#FFFFFF',
           muted: '#F5F4F2',

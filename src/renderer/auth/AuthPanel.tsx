@@ -6,6 +6,7 @@ import { LinkButton } from '../components/ui/LinkButton'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { MaintenanceNotice } from '../components/MaintenanceNotice'
 import { PageShell } from '../components/ui/PageShell'
+import { AUTH_COPY } from '@shared/copy/auth'
 
 type AuthTab = 'login' | 'register'
 
@@ -39,11 +40,11 @@ export function AuthPanel(): ReactElement {
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault()
     if (!agreedLegal) {
-      setError('请先阅读并同意用户协议与隐私政策。')
+      setError(AUTH_COPY.legalRequired)
       return
     }
     if (tab === 'register' && !registrationOpen) {
-      setError('当前暂未开放注册。')
+      setError(AUTH_COPY.registrationDisabled)
       return
     }
     setError(null)
@@ -69,16 +70,9 @@ export function AuthPanel(): ReactElement {
   return (
     <PageShell className="justify-center">
       <div className="mx-auto w-full max-w-[360px]">
-        <img
-          src="/app-icon.png"
-          alt=""
-          aria-hidden
-          className="mx-auto mb-3 h-[72px] w-[72px] rounded-[18px] shadow-sm"
-        />
-        <img src="/logo.png" alt="Petory" className="mx-auto mb-4 h-14 w-auto" />
-        <p className="text-center text-[24px] font-semibold">欢迎来到 Petory</p>
-        <p className="mt-2 text-center text-[13px] text-petory-text-secondary">
-          {remote ? '请登录后使用，额度与生成由云端同步。' : '请注册或登录后使用 Petory。'}
+        <img src="/logo.png" alt="Petory" className="mx-auto mb-5 h-14 w-auto" />
+        <p className="text-center text-[15px] leading-relaxed text-petory-text-secondary">
+          {remote ? AUTH_COPY.subtitleRemote : AUTH_COPY.subtitleLocal}
         </p>
 
         {bootstrap?.maintenanceNotice ? (
@@ -100,17 +94,17 @@ export function AuthPanel(): ReactElement {
 
         {!registrationOpen && remote ? (
           <p className="mt-2 text-center text-[11px] text-petory-text-tertiary">
-            当前暂未开放新用户注册。
+            {AUTH_COPY.registrationClosed}
           </p>
         ) : null}
 
         <form className="mt-6 space-y-4" onSubmit={(e) => void submit(e)}>
           {tab === 'register' ? (
             <label className="block text-[13px] font-medium text-petory-text-secondary">
-              昵称（可选）
+              {AUTH_COPY.displayNameLabel}
               <Input
                 className="mt-2 bg-petory-surface"
-                placeholder="怎么称呼你"
+                placeholder={AUTH_COPY.displayNamePlaceholder}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
               />
@@ -118,7 +112,7 @@ export function AuthPanel(): ReactElement {
           ) : null}
 
           <label className="block text-[13px] font-medium text-petory-text-secondary">
-            邮箱
+            {AUTH_COPY.emailLabel}
             <Input
               type="email"
               className="mt-2 bg-petory-surface"
@@ -130,11 +124,11 @@ export function AuthPanel(): ReactElement {
           </label>
 
           <label className="block text-[13px] font-medium text-petory-text-secondary">
-            密码
+            {AUTH_COPY.passwordLabel}
             <Input
               type="password"
               className="mt-2 bg-petory-surface"
-              placeholder="至少 6 位"
+              placeholder={AUTH_COPY.passwordPlaceholder}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -149,7 +143,7 @@ export function AuthPanel(): ReactElement {
           ) : null}
 
           <Button fullWidth disabled={loading} type="submit">
-            {loading ? '请稍候…' : tab === 'login' ? '登录' : '注册并进入'}
+            {loading ? AUTH_COPY.loading : tab === 'login' ? AUTH_COPY.login : AUTH_COPY.register}
           </Button>
         </form>
 
@@ -161,13 +155,13 @@ export function AuthPanel(): ReactElement {
             onChange={() => setAgreedLegal((v) => !v)}
           />
           <span>
-            我已阅读并同意
+            {AUTH_COPY.legalPrefix}
             <LinkButton className="mx-0.5" onClick={() => window.petory.app.openTerms()}>
-              用户协议
+              {AUTH_COPY.legalTerms}
             </LinkButton>
-            与
+            {AUTH_COPY.legalAnd}
             <LinkButton className="mx-0.5" onClick={() => window.petory.app.openPrivacy()}>
-              隐私政策
+              {AUTH_COPY.legalPrivacy}
             </LinkButton>
           </span>
         </label>

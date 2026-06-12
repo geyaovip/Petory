@@ -177,7 +177,7 @@ export function PetManagerPanel(): ReactElement {
                     <p className="truncate font-medium">{pet.name || '未命名'}</p>
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       {pet.onDesktop ? (
-                        <span className="rounded-full bg-[#E8F6FC] px-2 py-0.5 text-[11px] text-[#3A8FB5]">
+                        <span className="rounded-full bg-petory-accent-soft px-2 py-0.5 text-[11px] font-medium text-petory-accent-strong">
                           桌面中
                         </span>
                       ) : null}

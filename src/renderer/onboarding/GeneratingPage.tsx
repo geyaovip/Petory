@@ -54,7 +54,7 @@ export function GeneratingPage({ styleType = 'petory' }: GeneratingPageProps): R
       <p className="mt-1 text-[12px] text-petory-text-tertiary">
         {ONBOARDING_COPY.generating.styleNote(styleLabel)}
       </p>
-      <div className="mt-8 h-0.5 w-48 overflow-hidden rounded-full bg-[#F0EEEA]">
+      <div className="mt-8 h-0.5 w-48 overflow-hidden rounded-full bg-petory-track">
         <div
           className="h-full rounded-full bg-petory-primary transition-all duration-500"
           style={{

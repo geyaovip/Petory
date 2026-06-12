@@ -1,6 +1,6 @@
 # Petory UI 设计规范
 
-> 适用范围：Petory 桌面端应用界面（欢迎页、上传、生成、设置、聊天、番茄钟、成长页等）。
+> 适用范围：**桌面客户端**、**官网**（`website/`）、**管理后台**（`server/admin/public/`）。
 > 不包含：AI 生成的桌宠形象风格（见 Petory Style / `image-processing.mdc`）。
 
 ## 1. 设计原则
@@ -487,6 +487,56 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 - Hero 区：一句主标题 + 一句副标题 + 最多 2 个 CTA
 - Feature 卡片 2×2 或自适应网格，避免过长段落
 
+### 15.4 导航与页脚（全站统一）
+
+**所有官网页面**（`index` / `download` / `privacy` / `terms`）必须使用同一套顶栏与页脚，不得各页各写一套链接。
+
+**顶栏结构：**
+
+```
+[ Logo 横版 wordmark ]    首页 · 下载 · 隐私 · 协议    [ 免费下载 ]
+```
+
+| 元素 | 规范 |
+|------|------|
+| Logo | `assets/logo.png`，高度 **56px**（横版 wordmark，含品牌名） |
+| 导航链接 | 固定四项：首页、下载、隐私、协议；字号 14px，`--text-secondary`，悬停 `--text` |
+| 当前页 | 对应链接加 `.is-active`（`--text` + 字重 600），由 `site.js` 按路径自动标记 |
+| 右侧 CTA | 主按钮「免费下载」→ `download.html`；在下载页可改为锚点 `#mac` |
+| 移动端 | `<640px` 隐藏中间链接，保留 Logo + CTA |
+
+**页脚结构（固定）：**
+
+```
+© 2026 Petory
+隐私政策 · 用户协议 · 下载
+```
+
+- 不得使用仅「返回首页」的简化页脚
+- 法律页正文区使用 `.page-legal`，样式定义在 `styles.css`，禁止每页内联一套 legal CSS
+
+### 15.5 品牌资产
+
+| 资产 | 场景 | 尺寸 / 用法 |
+|------|------|-------------|
+| `logo.png` | 官网导航、客户端登录、管理端登录/侧栏 | 高度 44–56px，**横版 wordmark** |
+| `app-icon.png` | 应用图标、favicon 源、系统 Dock/任务栏 | 正方形；**不要**与 logo 同屏堆叠 |
+| `favicon-*.png` | 浏览器标签 | 16 / 32 / 48 + `apple-touch-icon`；**仅去透明边 + 等比缩放**，不得 zoom/crop 裁切图形 |
+
+**禁止：** 登录/欢迎区同时展示 app-icon + logo + 大标题「欢迎来到 Petory」（三重品牌重复）。客户端登录只保留 **logo + 一句说明**。
+
+### 15.6 下载页交互
+
+- 版本号从 `releases/latest.json` 读取；失败时显示「暂不可用」，**不得**写死 `1.0.0`
+- 下载按钮文案固定为「下载 macOS 版」「下载 Windows 版」；文件名与体积放在按钮下方 `.download-meta`
+- 「查看系统要求」链到 `download.html#requirements`
+- `#requirements` 区块列出 macOS / Windows 最低版本与网络说明
+
+### 15.7 法律页
+
+- 与首页相同顶栏 + 页脚；正文 max-width 720px
+- 语气用「你」不用「您」；避免法律腔以外的技术术语
+
 ---
 
 ## 16. 组件库约定（客户端）
@@ -542,9 +592,47 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 - [ ] 表格有空状态与加载态
 
 **官网**
+- [ ] 四页导航、页脚一致（见 §15.4）
 - [ ] 无开发/演示/internal 文案
 - [ ] 功能描述与当前版本一致
-- [ ] CTA 指向 `download.html`
+- [ ] CTA 指向 `download.html`；系统要求指向 `#requirements`
+- [ ] 登录区不同时堆叠 app-icon 与 logo
+
+---
+
+## 19. 跨端一致性
+
+### 19.1 共享 Design Token
+
+官网 `styles.css`、管理端 `admin.css`、客户端 `tailwind.config.js` 的色值必须与 §3 对齐。新增 token 时三处同步更新。
+
+| Token | 客户端 `petory-*` | 官网 / 管理端 CSS 变量 |
+|-------|-------------------|------------------------|
+| primary | `petory-primary` | `--primary` |
+| accent strong | `petory-accent-strong` | `--accent-strong` |
+| track | `petory-track` | `--track` |
+| error | `petory-error` | `--error` |
+
+圆角阶梯：`--radius-sm` 8px · `--radius` 12px · `--radius-lg` 16px（卡片 / Hero 面板）。
+
+### 19.2 文案语气
+
+| 端 | 人称 | 风格 |
+|----|------|------|
+| 客户端 | 你 | 温暖、短句；文案集中在 `src/shared/copy/` |
+| 官网 | 你 | 与客户端 onboarding 主标语一致 |
+| 管理端 | 中性 | 运营用语，可略正式，仍避免英文枚举直出 |
+
+### 19.3 按钮层级（全端）
+
+- 同一视觉区块最多 **1 个** Primary 实心按钮
+- 次要操作用描边 Secondary；取消/关闭用 Ghost 或文字链
+- 危险操作用 error 色或二次确认，不混在 Primary 旁并列多个实心按钮
+
+### 19.4 空态与错误
+
+- 空列表：一句说明 + 可选次要操作，不留空白容器
+- 网络/加载失败：说明原因 +「请稍后再试」，不展示堆栈、JSON、内部 URL 名
 
 ---
 

@@ -14,14 +14,18 @@ const sources = {
   avatar: '05_petory_social_avatar_transparent.png'
 }
 
-function copy(fromName, toPath) {
+const TRIM_THRESHOLD = 12
+const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 }
+
+/** Remove transparent padding only — never crop visible artwork. */
+async function writeTrimmedPng(fromName, toPath) {
   const from = path.join(srcDir, fromName)
   const to = path.join(root, toPath)
   if (!fs.existsSync(from)) {
     throw new Error(`Missing source asset: ${from}`)
   }
   fs.mkdirSync(path.dirname(to), { recursive: true })
-  fs.copyFileSync(from, to)
+  await sharp(from).trim({ threshold: TRIM_THRESHOLD }).png().toFile(to)
   console.log(`✓ ${toPath}`)
 }
 
@@ -33,40 +37,32 @@ for (const file of Object.values(sources)) {
   }
 }
 
-copy(sources.primary, 'website/assets/logo.png')
-copy(sources.primary, 'src/renderer/public/logo.png')
-copy(sources.primary, 'server/admin/public/logo.png')
-copy(sources.appIcon, 'server/admin/public/app-icon.png')
-copy(sources.appIcon, 'website/assets/app-icon.png')
-copy(sources.appIcon, 'src/renderer/public/app-icon.png')
-copy(sources.avatar, 'website/assets/avatar.png')
+await writeTrimmedPng(sources.primary, 'website/assets/logo.png')
+await writeTrimmedPng(sources.primary, 'src/renderer/public/logo.png')
+await writeTrimmedPng(sources.primary, 'server/admin/public/logo.png')
+await writeTrimmedPng(sources.appIcon, 'server/admin/public/app-icon.png')
+await writeTrimmedPng(sources.appIcon, 'website/assets/app-icon.png')
+await writeTrimmedPng(sources.appIcon, 'src/renderer/public/app-icon.png')
+await writeTrimmedPng(sources.avatar, 'website/assets/avatar.png')
 
-/** Trim transparent margins, then crop tight so tab icons read larger. */
-async function writeTightFavicon(source, dest, size, zoom = 1.2) {
-  const trimmed = await sharp(source).trim({ threshold: 12 }).png().toBuffer()
-  const zoomed = Math.max(size, Math.round(size * zoom))
-  const offset = Math.max(0, Math.round((zoomed - size) / 2))
+/** Trim transparent margins, then scale to fit — no zoom/crop. */
+async function writeFavicon(source, dest, size) {
+  const trimmed = await sharp(source).trim({ threshold: TRIM_THRESHOLD }).png().toBuffer()
   await sharp(trimmed)
-    .resize(zoomed, zoomed, { fit: 'cover', position: 'centre' })
-    .extract({ left: offset, top: offset, width: size, height: size })
+    .resize(size, size, { fit: 'contain', background: TRANSPARENT })
     .png()
     .toFile(dest)
 }
 
 async function writeFaviconSet(source, outDir) {
   fs.mkdirSync(outDir, { recursive: true })
-  const sizes = [
-    [16, 1.65],
-    [32, 1.45],
-    [48, 1.3]
-  ]
-  for (const [size, zoom] of sizes) {
+  for (const size of [16, 32, 48]) {
     const dest = path.join(outDir, `favicon-${size}.png`)
-    await writeTightFavicon(source, dest, size, zoom)
+    await writeFavicon(source, dest, size)
     console.log(`✓ ${path.relative(root, dest)}`)
   }
   const appleTouch = path.join(outDir, 'apple-touch-icon.png')
-  await writeTightFavicon(source, appleTouch, 180, 1.12)
+  await writeFavicon(source, appleTouch, 180)
   console.log(`✓ ${path.relative(root, appleTouch)}`)
   await fs.promises.copyFile(path.join(outDir, 'favicon-32.png'), path.join(outDir, 'favicon.png'))
   console.log(`✓ ${path.relative(root, path.join(outDir, 'favicon.png'))}`)
@@ -80,10 +76,12 @@ await writeFaviconSet(appIconSrc, path.join(root, 'server/admin/public'))
 const buildDir = path.join(root, 'build')
 fs.mkdirSync(buildDir, { recursive: true })
 const iconPng = path.join(buildDir, 'icon.png')
-execSync(
-  `sips -z 1024 1024 "${path.join(srcDir, sources.appIcon)}" --out "${iconPng}"`,
-  { stdio: 'inherit' }
-)
+await sharp(path.join(srcDir, sources.appIcon))
+  .trim({ threshold: TRIM_THRESHOLD })
+  .resize(1024, 1024, { fit: 'contain', background: TRANSPARENT })
+  .png()
+  .toFile(iconPng)
+console.log('✓ build/icon.png')
 
 const iconset = path.join(buildDir, 'icon.iconset')
 if (fs.existsSync(iconset)) {

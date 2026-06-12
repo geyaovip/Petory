@@ -44,12 +44,12 @@ export function StylePicker({ value, onChange, lastUsedStyle }: StylePickerProps
             badges={
               <>
                 {isLastUsed ? (
-                  <span className="rounded-full bg-[#FFF4E8] px-2 py-0.5 text-[10px] font-medium text-[#C47A2C]">
+                  <span className="rounded-full bg-petory-warning-soft px-2 py-0.5 text-[10px] font-medium text-petory-warning">
                     上次
                   </span>
                 ) : null}
                 {style.proOnly ? (
-                  <span className="rounded-full bg-[#E8F6FC] px-2 py-0.5 text-[10px] font-medium text-[#3A8FB5]">
+                  <span className="rounded-full bg-petory-accent-soft px-2 py-0.5 text-[10px] font-medium text-petory-accent-strong">
                     Pro
                   </span>
                 ) : null}
