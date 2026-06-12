@@ -51,7 +51,12 @@ const FRINGE_LIGHT_MIN = 155
 const FRINGE_MAX_SAT = 95
 const EDGE_RING_DEPTH = 5
 const EDGE_PALE_LIGHT = 162
-const ICON_INSET = 0.968
+/** macOS Dock icons need ~16% transparent margin or they look oversized vs system apps. */
+function iconInsetForSize(size) {
+  if (size >= 128) return 0.84
+  if (size >= 48) return 0.88
+  return 0.9
+}
 
 function isWhiteish(r, g, b, a) {
   if (a < 20) return true
@@ -458,9 +463,9 @@ async function writeTrimmedWordmark(keyed, toPath) {
   console.log(`✓ ${path.relative(root, toPath)}`)
 }
 
-/** Scale with contain; slight inset trims outer pale blue ring without cropping corners. */
+/** Scale with contain; inset matches macOS Dock safe zone (~84% for large icons). */
 function resizeAppIcon(trimmed, size) {
-  const inner = Math.max(1, Math.round(size * ICON_INSET))
+  const inner = Math.max(1, Math.round(size * iconInsetForSize(size)))
   const pad = size - inner
   const padTop = Math.floor(pad / 2)
   const padLeft = Math.floor(pad / 2)
