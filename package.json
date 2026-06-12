@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "prepare": "npm run sync:brand",
-    "dev": "electron-vite dev",
+    "dev": "npm run sync:brand && electron-vite dev",
     "dev:stack": "node scripts/dev-stack.mjs",
     "dev:docker": "node scripts/dev-docker.mjs",
     "docker:up": "node scripts/docker-up.mjs",
