@@ -41,22 +41,8 @@ const TRIM_THRESHOLD = 12
 const WHITE_MIN = 245
 const WHITE_SPREAD = 18
 const FRINGE_MIN_ALPHA = 56
-const FRINGE_LIGHT_MIN = 188
-
-const APP_ICON_ZOOM = {
-  16: 1.2,
-  32: 1.14,
-  48: 1.1,
-  128: 1.08,
-  180: 1.06,
-  256: 1.06,
-  512: 1.05,
-  1024: 1.04
-}
-
-function zoomForSize(size) {
-  return APP_ICON_ZOOM[size] ?? (size <= 64 ? 1.12 : size <= 256 ? 1.06 : 1.04)
-}
+const FRINGE_LIGHT_MIN = 200
+const FRINGE_MAX_SAT = 36
 
 function isWhiteish(r, g, b, a) {
   if (a < 20) return true
@@ -151,8 +137,16 @@ function decontaminateWhiteSpill(data, width, height) {
   }
 }
 
-/** Drop faint light / gray halos that survive flood-fill (squircle anti-alias). */
-function pruneLightFringe(data, width, height) {
+function isWhiteFringe(r, g, b) {
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const sat = max - min
+  const light = (r + g + b) / 3
+  return light >= FRINGE_LIGHT_MIN && sat <= FRINGE_MAX_SAT
+}
+
+/** Remove only white/cream halos — keep blue squircle anti-alias and transparent corners. */
+function pruneWhiteFringe(data, width, height) {
   const channels = 4
   const size = width * height
 
@@ -166,10 +160,8 @@ function pruneLightFringe(data, width, height) {
 
     const max = Math.max(r, g, b)
     const min = Math.min(r, g, b)
-    const sat = max - min
-    const light = (r + g + b) / 3
 
-    if (a < 24) {
+    if (a <= 28 && max - min < 45 && max < 165) {
       data[i] = 0
       data[i + 1] = 0
       data[i + 2] = 0
@@ -177,7 +169,7 @@ function pruneLightFringe(data, width, height) {
       continue
     }
 
-    if (a < FRINGE_MIN_ALPHA && light >= FRINGE_LIGHT_MIN) {
+    if (a < 20) {
       data[i] = 0
       data[i + 1] = 0
       data[i + 2] = 0
@@ -185,7 +177,7 @@ function pruneLightFringe(data, width, height) {
       continue
     }
 
-    if (light >= 248 && a < 160) {
+    if (isWhiteFringe(r, g, b) && a < FRINGE_MIN_ALPHA) {
       data[i] = 0
       data[i + 1] = 0
       data[i + 2] = 0
@@ -193,16 +185,7 @@ function pruneLightFringe(data, width, height) {
       continue
     }
 
-    // Gray/cream spill on squircle edges after resize (e.g. bottom Dock halo).
-    if (a < 140 && sat < 52 && light > 85) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-      continue
-    }
-
-    if (a < 96 && sat < 80) {
+    if (a < 120 && isWhiteFringe(r, g, b) && (r + g + b) / 3 >= 248) {
       data[i] = 0
       data[i + 1] = 0
       data[i + 2] = 0
@@ -213,7 +196,7 @@ function pruneLightFringe(data, width, height) {
 
 function postKeyRgba(data, width, height) {
   decontaminateWhiteSpill(data, width, height)
-  pruneLightFringe(data, width, height)
+  pruneWhiteFringe(data, width, height)
 }
 
 async function loadKeyedSource(fileName) {
@@ -255,22 +238,21 @@ async function writeTrimmedWordmark(keyed, toPath) {
   console.log(`✓ ${path.relative(root, toPath)}`)
 }
 
-function zoomedPipeline(trimmed, size) {
-  const zoom = zoomForSize(size)
-  const zoomed = Math.max(size, Math.round(size * zoom))
-  const offset = Math.max(0, Math.round((zoomed - size) / 2))
-
-  return sharp(trimmed)
-    .resize(zoomed, zoomed, { fit: 'cover', position: 'centre' })
-    .extract({ left: offset, top: offset, width: size, height: size })
+/** Scale with contain so transparent squircle corners are never cropped away. */
+function resizeAppIcon(trimmed, size) {
+  return sharp(trimmed).resize(size, size, {
+    fit: 'contain',
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+    kernel: sharp.kernel.lanczos3
+  })
 }
 
 async function writeAppIconAlpha(trimmed, dest, size) {
-  const { data, info } = await zoomedPipeline(trimmed, size)
+  const { data, info } = await resizeAppIcon(trimmed, size)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
-  pruneLightFringe(data, info.width, info.height)
+  pruneWhiteFringe(data, info.width, info.height)
   await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
     .png()
     .toFile(dest)

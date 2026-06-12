@@ -531,9 +531,19 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 | 派生资产 | 场景 |
 |----------|------|
 | `logo.png` | 官网导航、客户端登录、管理端登录/侧栏（高度 44–56px） |
-| `favicon-16/32/48.png` | 浏览器标签（**透明圆角 squircle**，与 `apple-touch-icon` 同源） |
+| `favicon-16/32/48.png` | 浏览器标签（**透明圆角 squircle**，`fit:contain` 缩放，禁止 crop） |
 | `apple-touch-icon.png` | 客户端 Dock 运行时图标（**保留透明圆角**） |
 | `icon.png` / `icon.icns` | 安装包与系统图标（**保留透明圆角**，与源图 squircle 一致） |
+
+**各场景引用：**
+
+| 场景 | 文件 |
+|------|------|
+| 官网 / 管理端标签 | `favicon-16/32/48.png` |
+| 客户端标签 | `src/renderer/index.html` → 同上 |
+| 客户端 Dock（dev/运行中） | `loadAppIcon()` → `apple-touch-icon.png` |
+| macOS 安装包 / Dock（安装后） | `build/icon.icns` |
+| Windows 安装包 | `build/icon.png` |
 
 **部署镜像（由 sync 自动复制，勿手改）：**
 
