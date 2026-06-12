@@ -524,7 +524,7 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 | `wordmark.png` | 横版 logo（白底）→ `brand/generated/logo.png` |
 | `app-icon.png` | 方形 app 图标（白底）→ favicon / Dock / 安装包 |
 
-处理规则（**优先级**：① 透明圆角 ② 去白底 ③ 保留蓝底 squircle，边缘蓝可被清理/加固）：
+处理规则（**优先级**：① 无白边 ② 无锯齿 ③ 透明圆角 ④ 保留深蓝 squircle，浅蓝外圈可内缩裁剪）：
 
 1. 边缘泛洪去除白色背景变透明  
 2. 白底溢色还原（decontaminate）+ 剔除白/浅色 halo（含边缘被白污染的浅蓝像素）  

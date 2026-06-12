@@ -42,13 +42,16 @@ const WHITE_MIN = 245
 const WHITE_SPREAD = 18
 /**
  * Processing priority (app-icon):
- *   1. Transparent squircle corners (contain resize, never crop)
- *   2. Remove white background / halos aggressively
- *   3. Keep the blue squircle fill — edge blues may be cleaned or strengthened,
- *      but opaque blue body is never deleted
+ *   1. No white / pale fringe on dark backgrounds (top/left edges included)
+ *   2. Smooth edges — no alpha stair-steps (feather + supersample)
+ *   3. Transparent squircle corners (contain resize, never crop)
+ *   4. Keep deep blue squircle body; pale edge blues may be trimmed inward
  */
-const FRINGE_LIGHT_MIN = 165
-const FRINGE_MAX_SAT = 72
+const FRINGE_LIGHT_MIN = 155
+const FRINGE_MAX_SAT = 95
+const EDGE_RING_DEPTH = 5
+const EDGE_PALE_LIGHT = 162
+const ICON_INSET = 0.968
 
 function isWhiteish(r, g, b, a) {
   if (a < 20) return true
@@ -149,9 +152,13 @@ function pixelStats(r, g, b) {
   return { max, min, sat: max - min, light: (r + g + b) / 3 }
 }
 
-/** Opaque blue squircle body — never delete. */
 function isCoreBlue(r, g, b) {
   return b >= r + 12 && b >= g + 4 && b - Math.min(r, g) >= 28
+}
+
+/** Saturated interior blue — protected from edge trimming. */
+function isDeepBlue(r, g, b, a = 255) {
+  return a >= 180 && isCoreBlue(r, g, b) && (r + g + b) / 3 < EDGE_PALE_LIGHT
 }
 
 function isPaleSpill(r, g, b, a) {
@@ -209,14 +216,15 @@ function cleanEdgeSpill(data, width, height) {
   }
 }
 
-/** Pale opaque fringe connected to canvas edge (not interior cat whites). */
+/** Pale fringe connected to canvas edge (incl. light sky-blue from white matte). */
 function isExteriorSpill(r, g, b, a) {
   if (a < 16) return true
-  if (isCoreBlue(r, g, b) && a >= 100) return false
+  if (isDeepBlue(r, g, b, a)) return false
   const { sat, light } = pixelStats(r, g, b)
   if (isWhiteish(r, g, b, a)) return true
-  if (light >= 225 && sat < 50 && !isCoreBlue(r, g, b)) return true
-  if (light >= 200 && sat < 38 && a < 250) return true
+  if (light >= EDGE_PALE_LIGHT && sat < FRINGE_MAX_SAT) return true
+  if (light >= 148 && sat < 80 && a < 252) return true
+  if (!isCoreBlue(r, g, b) && light >= 130) return true
   return false
 }
 
@@ -264,6 +272,106 @@ function floodExteriorSpill(data, width, height) {
   }
 }
 
+/** Strip pale pixels in a few px ring outside deep blue (fixes top/left white halos). */
+function stripExteriorPaleRing(data, width, height, maxDepth = EDGE_RING_DEPTH) {
+  const channels = 4
+  const size = width * height
+  const dist = new Int16Array(size).fill(-1)
+  const queue = []
+
+  for (let p = 0; p < size; p++) {
+    if (data[p * channels + 3] < 12) {
+      dist[p] = 0
+      queue.push(p)
+    }
+  }
+
+  for (let qi = 0; qi < queue.length; qi++) {
+    const p = queue[qi]
+    const d = dist[p]
+    if (d >= maxDepth) continue
+    const x = p % width
+    const y = (p - x) / width
+    const neighbors = [
+      [x - 1, y],
+      [x + 1, y],
+      [x, y - 1],
+      [x, y + 1]
+    ]
+    for (const [nx, ny] of neighbors) {
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue
+      const np = ny * width + nx
+      if (dist[np] >= 0) continue
+      dist[np] = d + 1
+      queue.push(np)
+    }
+  }
+
+  for (let p = 0; p < size; p++) {
+    const d = dist[p]
+    if (d <= 0 || d > maxDepth) continue
+    const i = p * channels
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+    const a = data[i + 3]
+    const { light, sat } = pixelStats(r, g, b)
+
+    if (isDeepBlue(r, g, b, a) && d >= maxDepth - 1) continue
+
+    const pale =
+      light >= EDGE_PALE_LIGHT ||
+      (light >= 145 && sat < 88) ||
+      !isCoreBlue(r, g, b) ||
+      a < 245
+
+    if (pale) {
+      data[i] = 0
+      data[i + 1] = 0
+      data[i + 2] = 0
+      data[i + 3] = 0
+    }
+  }
+}
+
+/** Prevent white RGB leaking through low alpha on dark Dock backgrounds. */
+function sanitizeEdgeRgb(data, width, height) {
+  const channels = 4
+  const size = width * height
+
+  for (let p = 0; p < size; p++) {
+    const i = p * channels
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+    const a = data[i + 3]
+    const { light } = pixelStats(r, g, b)
+
+    if (a < 28) {
+      data[i] = 0
+      data[i + 1] = 0
+      data[i + 2] = 0
+      data[i + 3] = 0
+      continue
+    }
+
+    if (a < 200 && light >= EDGE_PALE_LIGHT) {
+      data[i] = 0
+      data[i + 1] = 0
+      data[i + 2] = 0
+      data[i + 3] = 0
+      continue
+    }
+
+    if (a < 255 && light >= 190 && !isDeepBlue(r, g, b, a)) {
+      data[i] = 0
+      data[i + 1] = 0
+      data[i + 2] = 0
+      data[i + 3] = 0
+    }
+  }
+}
+
 /** Soften alpha at transparent↔opaque boundaries to remove stair-step jaggies. */
 function featherAlphaEdges(data, width, height, passes = 2) {
   const channels = 4
@@ -300,7 +408,10 @@ function postKeyAppIconRgba(data, width, height, { feather = true } = {}) {
   decontaminateWhiteSpill(data, width, height)
   cleanEdgeSpill(data, width, height)
   floodExteriorSpill(data, width, height)
+  stripExteriorPaleRing(data, width, height)
+  sanitizeEdgeRgb(data, width, height)
   if (feather) featherAlphaEdges(data, width, height, 2)
+  sanitizeEdgeRgb(data, width, height)
 }
 
 function postKeyRgba(data, width, height) {
@@ -347,13 +458,26 @@ async function writeTrimmedWordmark(keyed, toPath) {
   console.log(`✓ ${path.relative(root, toPath)}`)
 }
 
-/** Scale with contain so transparent squircle corners are never cropped away. */
+/** Scale with contain; slight inset trims outer pale blue ring without cropping corners. */
 function resizeAppIcon(trimmed, size) {
-  return sharp(trimmed).resize(size, size, {
-    fit: 'contain',
-    background: { r: 0, g: 0, b: 0, alpha: 0 },
-    kernel: sharp.kernel.lanczos3
-  })
+  const inner = Math.max(1, Math.round(size * ICON_INSET))
+  const pad = size - inner
+  const padTop = Math.floor(pad / 2)
+  const padLeft = Math.floor(pad / 2)
+
+  return sharp(trimmed)
+    .resize(inner, inner, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+      kernel: sharp.kernel.lanczos3
+    })
+    .extend({
+      top: padTop,
+      bottom: pad - padTop,
+      left: padLeft,
+      right: pad - padLeft,
+      background: { r: 0, g: 0, b: 0, alpha: 0 }
+    })
 }
 
 function supersampleFactor(size) {
