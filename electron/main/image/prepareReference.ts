@@ -24,8 +24,7 @@ function debugSavePathForUpload(filePath: string): string | null {
 }
 
 /**
- * Match MiniMax website uploads: keep the user's photo, only fix EXIF orientation.
- * Do not resize, compress aggressively, or rembg — those change the subject_reference.
+ * Keep the user's photo intact and only fix EXIF orientation before image-to-image generation.
  */
 export async function prepareReferenceFromPath(
   filePath: string,

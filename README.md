@@ -32,7 +32,7 @@ npm run server:db
 npm run server:dev
 ```
 
-The app expects `MINIMAX_API_KEY` for generation flows and `KIMI_API_KEY` for chat features.
+The app expects `ARK_API_KEY` for Seedream image generation and `KIMI_API_KEY` for chat features.
 
 ## Common commands
 

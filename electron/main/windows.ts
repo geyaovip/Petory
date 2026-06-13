@@ -1,6 +1,6 @@
 import { BrowserWindow, screen } from 'electron'
 import path from 'path'
-import { loadAppIcon } from './appIcon'
+import { loadWindowIcon } from './appIcon'
 import { IPC } from '../../src/shared/ipc'
 import { broadcastPetsListChanged } from './poseService'
 import type { BubblePayload } from '../../src/shared/types/growth'
@@ -111,7 +111,7 @@ function createPanelWindow(
   }
 
   const pos = panelPosition(offset.x, offset.y, size)
-  const icon = loadAppIcon()
+  const icon = loadWindowIcon()
   const win = new BrowserWindow({
     ...size,
     x: pos.x,
@@ -203,7 +203,7 @@ export function createPetWindowFor(petId: string, desktopIndex = 0): BrowserWind
   const state = loadWindowState()
   const settings = loadUserSettings()
 
-  const icon = loadAppIcon()
+  const icon = loadWindowIcon()
   const win = new BrowserWindow({
     width: state.width,
     height: state.height,

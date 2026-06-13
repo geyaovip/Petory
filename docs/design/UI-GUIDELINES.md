@@ -517,21 +517,18 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 
 ### 15.5 品牌资产
 
-**唯一源目录：** `petory_logo/`（仅 2 张**白底**源图；勿在其他目录手改派生图）
+**唯一源目录：** `petory_logo/`（仅 2 张 **RGBA 透明底**源图；勿在其他目录手改派生图）
 
 | 源文件 | 说明 |
 |--------|------|
-| `wordmark.png` | 横版 logo（白底）→ `brand/generated/logo.png` |
-| `app-icon.png` | 方形 app 图标（白底）→ favicon / Dock / 安装包 |
+| `01_petory_primary_logo_transparent.png` | 横版 wordmark → `brand/generated/logo.png` |
+| `03_petory_app_icon_transparent.png` | 方形 app 图标 → favicon / Dock / 安装包 |
 
-处理规则（**优先级**：① 无白边 ② 无锯齿 ③ 透明圆角 ④ 保留深蓝 squircle，浅蓝外圈可内缩裁剪）：
+处理规则（`npm run sync:brand`）：
 
-1. 边缘泛洪去除白色背景变透明  
-2. 白底溢色还原（decontaminate）+ 剔除白/浅色 halo（含边缘被白污染的浅蓝像素）  
-3. 不透明蓝色 squircle 主体保留；半透明且确认为蓝色的边缘像素可加固为不透明  
-4. 图形内部白色（猫脸等）保留；app-icon 居中到透明正方形后 `contain` 缩放，禁止 crop  
-5. 边缘 alpha 羽化 + 小图超采样下采样，避免硬切 alpha 产生锯齿；禁止将半透明蓝边直接 snap 到 255  
-6. 透明边距按场景单独配置（`scripts/sync-brand-assets.mjs` → `SCENE_INSET`）；不需要边距的场景 **inset = 1**（铺满画布）  
+1. **不做**白底抠图、溢色还原、边缘羽化或锯齿修复——源图已是透明 PNG，直接沿用 alpha
+2. app 图标 `trim` 后居中到透明正方形，`contain` 缩放，**禁止 crop**
+3. 透明边距仅按场景配置（`scripts/sync-brand-assets.mjs` → `SCENE_INSET`）；不需要边距的场景 **inset = 1**（铺满画布）
 
 **Git 中唯一派生目录：** `brand/generated/`（`npm run sync:brand` 写入，提交此目录即可）
 
@@ -539,7 +536,8 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 |------|------|------------------|------|
 | 官网 / 管理端 / 客户端标签 | `favicon-16/32/48.png` | **1**（无） | 浏览器自行裁圆角，铺满即可 |
 | 官网 / 管理端书签 | `apple-touch-icon.png` | **1**（无） | 与 favicon 一致，满画布 |
-| mac 客户端 Dock（运行中） | `src/renderer/public/apple-touch-icon.png` | **0.84** | 对齐系统 Dock 视觉尺寸 |
+| mac 客户端 Dock（开发运行） | `build/dock-icon.png`（512px） | **0.84** | `loadDockIcon()` 优先加载 |
+| mac 客户端 Dock（备用） | `src/renderer/public/apple-touch-icon.png` | **0.84** | 对齐系统 Dock 视觉尺寸 |
 | macOS 安装包 | `build/icon.icns` | **0.84** | 同 Dock 安全区 |
 | Windows 安装包 | `build/icon.png` | **1**（无） | 系统自行处理圆角 |
 | 归档主图 | `brand/generated/icon.png` | **1**（无） | 仅作派生源，不额外留白 |
@@ -564,7 +562,8 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 
 **图标分工（必须遵守）：**
 - **登录页 / 导航** → 横版 `logo.png`
-- **Dock / 任务栏 / 窗口 / 浏览器标签** → 方形 app-icon 派生图（`loadAppIcon()` → `apple-touch-icon.png`，与 `index.html` favicon 同源）
+- **Dock（mac 开发）** → `build/dock-icon.png`（`loadDockIcon()`）
+- **任务栏 / 窗口 / 浏览器标签** → 方形 favicon 派生图（`loadWindowIcon()`，与 `index.html` favicon 同源）
 
 **禁止：** 额外存放 `app-icon.png`、`avatar.png` 或 `resources/brand/` 副本；禁止把 wordmark 用作 favicon/Dock 图标。
 

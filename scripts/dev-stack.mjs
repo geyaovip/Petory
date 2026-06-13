@@ -7,6 +7,7 @@ import fs from 'fs'
 import { fileURLToPath } from 'node:url'
 import path from 'path'
 import { postgresFailureHint, waitForPostgres } from './lib/wait-postgres.mjs'
+import { stopDevProcesses } from './lib/dev-runtime.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const serverDir = path.join(root, 'server')
@@ -114,7 +115,10 @@ async function main() {
 
   await wait(2000)
 
-  console.info('[petory] starting Electron client...')
+  console.info('[petory] stopping stale Electron dev processes...')
+  stopDevProcesses(root)
+
+  console.info('[petory] starting Electron client (API: http://localhost:8787)...')
   const client = run('npm', ['run', 'dev'], { cwd: root })
 
   const shutdown = () => {

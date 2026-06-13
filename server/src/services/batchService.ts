@@ -12,7 +12,7 @@ import {
   canUseStyle,
   validatePoses
 } from './entitlementService.js'
-import { generateImage } from './minimaxService.js'
+import { generateImage } from './seedreamService.js'
 import { canConsumeGeneration, consumeGeneration } from './quotaService.js'
 import { assertGenerationEnabled } from './systemConfigService.js'
 import {
@@ -194,7 +194,7 @@ export async function runGenerationBatch(user: User, input: BatchInput) {
     } catch (error) {
       const durationMs = Date.now() - started
       const message = error instanceof Error ? error.message : '生成失败'
-      const errorCode = message.startsWith('MINIMAX_') ? message.split(':')[0]! : 'GENERATION_FAILED'
+      const errorCode = message.startsWith('IMAGE_') ? message.split(':')[0]! : 'GENERATION_FAILED'
       await prisma.generationJob.update({
         where: { id: job.id },
         data: {

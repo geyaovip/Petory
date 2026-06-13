@@ -3,78 +3,87 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Petory — 上传一张照片，让它住进你的电脑。AI 桌面陪伴，支持 macOS 与 Windows。"
-    />
-    <title>Petory — 让你的照片住进电脑</title>
+    <meta name="description" content="Petory — 把熟悉的照片变成会聊天、陪你专注的桌面伙伴。支持 macOS 与 Windows。" />
+    <title>Petory — 你的桌面，从此多一个它</title>
     <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=2.4.4" />
+    <link rel="stylesheet" href="styles.css?v=2.8.0" />
   </head>
-  <body>
-    <div class="container">
-      <nav class="nav">
-        <a class="logo" href="index.html">
-          <img src="assets/logo.png" alt="Petory" height="56" />
-        </a>
-        <a class="btn btn-primary" href="download.html">免费下载</a>
-      </nav>
+  <body class="launch-home">
+    <header class="launch-header launch-wrap">
+      <a class="launch-logo" href="index.html" aria-label="Petory 首页">
+        <img src="assets/logo.png?v=9" alt="Petory" width="819" height="325" />
+      </a>
+      <a class="launch-header-cta" href="download.html">免费下载</a>
+    </header>
 
-      <section class="hero">
-        <span class="hero-badge">AI 桌宠 · macOS & Windows</span>
-        <h1>上传一张照片，<br />让它住进你的电脑。</h1>
-        <p>
-          把猫、狗或你喜欢的角色变成桌面伙伴——陪你聊天、专注工作、慢慢成长，不打扰你的日常。
-        </p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="download.html">下载 Petory</a>
-          <a class="btn btn-secondary" href="download.html#requirements">查看系统要求</a>
+    <main>
+      <section class="launch-hero launch-wrap" aria-labelledby="launch-title">
+        <div class="launch-hero-copy">
+          <p class="launch-tag">桌面陪伴 · macOS 与 Windows</p>
+          <h1 id="launch-title">你的桌面，<br />从此多一个它。</h1>
+          <p class="launch-lead">上传一张熟悉的照片，让它成为会回应、会陪伴的桌面伙伴。陪你聊天、专注，也陪你度过普通的每一天。</p>
+          <a class="launch-primary" href="download.html">免费下载 Petory <span aria-hidden="true">↓</span></a>
+          <div class="launch-trust" aria-label="产品特点">
+            <span>免费下载</span><span>快速安装</span><span>隐私优先</span>
+          </div>
         </div>
-        <img class="pet-preview" src="assets/sample-pet.svg" alt="Petory 示例桌宠" width="180" height="220" />
+
+        <div class="launch-hero-visual" aria-label="Petory 在桌面陪伴的场景">
+          <img class="launch-hero-photo" src="assets/cat-desktop.jpg" alt="橘白猫坐在电脑旁的温暖桌面场景" />
+          <div class="launch-ui launch-chat"><small>Petory</small><p>今天也一起加油呀。<br />我会一直在你身边。</p></div>
+          <div class="launch-ui launch-focus"><small>专注时间</small><strong>25:00</strong><span>专注中</span></div>
+          <div class="launch-ui launch-level"><small>陪伴等级</small><strong>Lv. 8</strong><div><i></i></div></div>
+        </div>
       </section>
 
-      <section class="features">
-        <article class="card">
-          <span class="card-kicker">01 · CREATE</span>
-          <h3>三步拥有桌宠</h3>
-          <p>上传照片、等待生成、取名完成——无需复杂编辑，几分钟就能在桌面见到它。</p>
-        </article>
-        <article class="card">
-          <span class="card-kicker">02 · ALIVE</span>
-          <h3>多种姿势与状态</h3>
-          <p>待机、开心、提醒等姿势随场景切换，让桌宠更像「真的在陪你」。</p>
-        </article>
-        <article class="card">
-          <span class="card-kicker">03 · CHAT</span>
-          <h3>温柔 AI 对话</h3>
-          <p>根据性格设定聊天语气，气泡轻量弹出，右键菜单即可开始对话。</p>
-        </article>
-        <article class="card">
-          <span class="card-kicker">04 · GROW</span>
-          <h3>专注与成长</h3>
-          <p>番茄钟、久坐提醒与经验等级，让陪伴不只是好看，也帮你保持节奏。</p>
-        </article>
+      <section class="launch-journey launch-wrap" aria-labelledby="journey-title">
+        <div class="launch-journey-title">
+          <p>从一张照片，</p>
+          <h2 id="journey-title">到一直在身边的它。</h2>
+        </div>
+        <ol class="launch-journey-steps">
+          <li><img src="assets/cat-memory.jpg" alt="橘白猫的生活照片" /><span>01</span><strong>上传照片</strong><p>选择一张最熟悉、最喜欢的照片。</p></li>
+          <li><img src="assets/cat-focus-v2.jpg" alt="同一只橘白猫的专属陪伴形象" /><span>02</span><strong>创建专属形象</strong><p>保留它的花纹、神态与熟悉的感觉。</p></li>
+          <li><img src="assets/cat-desktop.jpg" alt="同一只橘白猫出现在电脑桌面旁" /><span>03</span><strong>来到你的桌面</strong><p>从此陪你聊天、专注和休息。</p></li>
+        </ol>
       </section>
 
-      <section class="cta-band">
-        <h2>准备好迎接你的桌面伙伴了吗？</h2>
-        <p>免费下载，先体验示例宠物，也可以上传自己的照片。</p>
-        <a class="btn btn-primary" href="download.html">立即下载</a>
+      <section class="launch-features launch-wrap" aria-labelledby="features-title">
+        <div class="launch-section-heading">
+          <h2 id="features-title">它懂你，也很贴心。</h2>
+          <p>不只是可爱，更是你生活中的小助手。</p>
+        </div>
+        <div class="launch-feature-grid">
+          <article><div><span>日常陪伴</span><h3>随时聊聊</h3><p>分享今天发生的小事，它会认真回应。</p></div><div class="feature-ui"><small>Petory</small><p>今天也辛苦啦，慢慢来。</p></div><img src="assets/cat-desktop.jpg" alt="橘白猫陪伴聊天的桌面场景" /></article>
+          <article><div><span>专注时刻</span><h3>安静陪伴</h3><p>开启专注时钟，它会在桌边陪你完成当下。</p></div><div class="feature-timer">25:00<small>专注中</small></div><img src="assets/cat-focus-v2.jpg" alt="同一只橘白猫陪伴专注的场景" /></article>
+          <article><div><span>生活提醒</span><h3>适时关心</h3><p>喝水、伸展、休息一下，提醒刚刚好。</p></div><div class="feature-ui"><small>休息一下</small><p>起来活动一会儿吧。</p></div><img src="assets/cat-remind-v2.jpg" alt="同一只橘白猫提醒喝水的场景" /></article>
+          <article><div><span>陪伴记录</span><h3>一起成长</h3><p>每一次互动都会留下记录，慢慢积累默契。</p></div><div class="feature-level">Lv. 9<small>1300 / 3200 XP</small></div><img src="assets/cat-grow-v2.jpg" alt="同一只橘白猫庆祝成长的场景" /></article>
+        </div>
       </section>
 
-      <footer class="footer">
-        <p>© 2026 Petory</p>
-        <p class="footer-links">
-          <a href="privacy.html">隐私政策</a>
-          <span>·</span>
-          <a href="terms.html">用户协议</a>
-          <span>·</span>
-          <a href="download.html">下载</a>
-        </p>
-      </footer>
-    </div>
+      <section class="launch-steps launch-wrap" aria-labelledby="steps-title">
+        <h2 id="steps-title">只需三步，拥有你的专属桌宠</h2>
+        <ol><li><span>01</span><div><strong>上传照片</strong><p>选一张最喜欢的照片</p></div></li><li><span>02</span><div><strong>创建桌宠</strong><p>准备形象、动作与状态</p></div></li><li><span>03</span><div><strong>开始桌面陪伴</strong><p>聊天、专注、提醒与成长</p></div></li></ol>
+      </section>
+
+      <section class="launch-platforms launch-wrap" aria-labelledby="platform-title">
+        <div class="launch-platform-heading"><h2 id="platform-title">为你的系统，量身打造</h2><p>原生应用，轻量可靠，与你的桌面深度融合。</p></div>
+        <div class="launch-platform-grid">
+          <article><span>macOS</span><p>支持 Apple Silicon 与 Intel<br />需要 macOS 12 或更高版本</p><a href="download.html#mac">下载 macOS 版 ↓</a></article>
+          <article><span>Windows</span><p>适用于 Windows 10 / 11<br />64 位安装包</p><a href="download.html#win">下载 Windows 版 ↓</a></article>
+          <img src="assets/cat-desktop.jpg" alt="同一只橘白猫陪在电脑旁" />
+        </div>
+      </section>
+
+      <section class="launch-final launch-wrap" aria-labelledby="final-title">
+        <div><h2 id="final-title">让每一次打开电脑，<br />都有它在等你。</h2><p>免费下载 Petory，开启你的桌面陪伴之旅。</p><a class="launch-primary" href="download.html">免费下载 Petory <span aria-hidden="true">↓</span></a></div>
+        <img src="assets/cat-cta-v2.jpg" alt="同一只橘白猫在温暖的珊瑚色背景前闭眼微笑" />
+      </section>
+    </main>
+
+    <footer class="launch-footer launch-wrap"><p>© 2026 Petory</p><div><a href="privacy.html">隐私政策</a><a href="terms.html">用户协议</a><a href="download.html">下载</a></div></footer>
   </body>
 </html>

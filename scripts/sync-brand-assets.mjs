@@ -3,6 +3,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
 import sharp from 'sharp'
+import { verifyBrandAssets } from './verify-brand-assets.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
@@ -12,49 +13,24 @@ const brandDir = path.join(root, 'brand', 'generated')
 /**
  * Brand asset map — only edit sources in petory_logo/, then run npm run sync:brand
  *
- * SOURCES (you maintain):
- *   petory_logo/wordmark.png   — horizontal logo, white background
- *   petory_logo/app-icon.png   — square app icon, white background
+ * SOURCES (RGBA transparent — no edge / fringe processing):
+ *   petory_logo/01_petory_primary_logo_transparent.png  — horizontal wordmark
+ *   petory_logo/03_petory_app_icon_transparent.png      — square app icon
  *
  * CANONICAL OUTPUT (git-tracked):
- *   brand/generated/*   — all derived PNG / ICNS
+ *   brand/generated/*
  *
- * MIRRORS (gitignored, copied on sync — do not hand-edit):
- *   logo.png          → website/assets, src/renderer/public, server/admin/public
- *   favicon-*.png     → website/, src/renderer/public, server/admin/public
- *   apple-touch-icon  → website/admin (full bleed); renderer copy uses mac Dock inset
- *   build/icon.png    → electron-builder Windows (full bleed)
- *   build/icon.icns   → electron-builder macOS (Dock safe zone)
- *
- * NOT NEEDED (build artifacts — delete freely):
- *   out/renderer/*    — electron-vite copies from src/renderer/public on build
- *   build/icon.iconset — temporary icns input, removed after sync
- *   release/*         — packaged installers
+ * MIRRORS (gitignored, copied on sync):
+ *   logo.png, favicon-*.png, apple-touch-icon.png
+ *   build/icon.png, build/dock-icon.png, build/icon.icns
  */
 
 const sources = {
-  wordmark: 'wordmark.png',
-  appIcon: 'app-icon.png'
+  wordmark: '01_petory_primary_logo_transparent.png',
+  appIcon: '03_petory_app_icon_transparent.png'
 }
 
-const TRIM_THRESHOLD = 12
-const WHITE_MIN = 245
-const WHITE_SPREAD = 18
-/**
- * Processing priority (app-icon):
- *   1. No white / pale fringe on dark backgrounds (top/left edges included)
- *   2. Smooth edges — no alpha stair-steps (feather + supersample)
- *   3. Transparent squircle corners (contain resize, never crop)
- *   4. Keep deep blue squircle body; pale edge blues may be trimmed inward
- */
-const FRINGE_LIGHT_MIN = 155
-const FRINGE_MAX_SAT = 95
-const EDGE_RING_DEPTH = 5
-const EDGE_PALE_LIGHT = 162
-/**
- * Per-scene transparent margin (1 = no extra padding, max fill).
- * Pale-edge cleanup is handled separately — not via canvas inset.
- */
+/** Transparent margin for macOS Dock / installer only (layout, not edge cleanup). */
 const SCENE_INSET = {
   favicon: 1,
   webAppleTouch: 1,
@@ -64,193 +40,27 @@ const SCENE_INSET = {
   brandArchive: 1
 }
 
-function isWhiteish(r, g, b, a) {
-  if (a < 20) return true
-  if (r < WHITE_MIN || g < WHITE_MIN || b < WHITE_MIN) return false
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  return max - min <= WHITE_SPREAD
+function assertSources() {
+  for (const file of Object.values(sources)) {
+    const from = path.join(srcDir, file)
+    if (!fs.existsSync(from)) {
+      console.error(`✗ Expected ${from}`)
+      process.exit(1)
+    }
+  }
 }
 
-/** Flood white / transparent from image edges — keeps interior whites (e.g. cat fur). */
-function keyWhiteBackgroundRgba(data, width, height) {
+function floodExteriorMask(data, width, height, alphaCut = 24) {
   const channels = 4
   const size = width * height
-  const bg = new Uint8Array(size)
-  const queue = []
-
-  const pushIfBg = (x, y) => {
-    const p = y * width + x
-    if (bg[p]) return
-    const i = p * channels
-    if (!isWhiteish(data[i], data[i + 1], data[i + 2], data[i + 3])) return
-    bg[p] = 1
-    queue.push(p)
-  }
-
-  for (let x = 0; x < width; x++) {
-    pushIfBg(x, 0)
-    pushIfBg(x, height - 1)
-  }
-  for (let y = 0; y < height; y++) {
-    pushIfBg(0, y)
-    pushIfBg(width - 1, y)
-  }
-
-  while (queue.length > 0) {
-    const p = queue.pop()
-    const x = p % width
-    const y = (p - x) / width
-    if (x > 0) pushIfBg(x - 1, y)
-    if (x < width - 1) pushIfBg(x + 1, y)
-    if (y > 0) pushIfBg(x, y - 1)
-    if (y < height - 1) pushIfBg(x, y + 1)
-  }
-
-  for (let p = 0; p < size; p++) {
-    const i = p * channels
-    const r = data[i]
-    const g = data[i + 1]
-    const b = data[i + 2]
-    const a = data[i + 3]
-
-    if (bg[p]) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-      continue
-    }
-
-    if (a < 20 && r >= WHITE_MIN - 10 && g >= WHITE_MIN - 10 && b >= WHITE_MIN - 10) {
-      data[i + 3] = 255
-      continue
-    }
-
-    if (a < 20) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-    }
-  }
-}
-
-/** Undo white-background premultiplication on semi-transparent edge pixels. */
-function decontaminateWhiteSpill(data, width, height) {
-  const channels = 4
-  const size = width * height
-
-  for (let p = 0; p < size; p++) {
-    const i = p * channels
-    const a = data[i + 3] / 255
-    if (a <= 0.02 || a >= 0.995) continue
-
-    const r = data[i]
-    const g = data[i + 1]
-    const b = data[i + 2]
-    const inv = 1 - a
-
-    data[i] = Math.max(0, Math.min(255, Math.round((r - inv * 255) / a)))
-    data[i + 1] = Math.max(0, Math.min(255, Math.round((g - inv * 255) / a)))
-    data[i + 2] = Math.max(0, Math.min(255, Math.round((b - inv * 255) / a)))
-  }
-}
-
-function pixelStats(r, g, b) {
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  return { max, min, sat: max - min, light: (r + g + b) / 3 }
-}
-
-function isCoreBlue(r, g, b) {
-  return b >= r + 12 && b >= g + 4 && b - Math.min(r, g) >= 28
-}
-
-/** Saturated interior blue — protected from edge trimming. */
-function isDeepBlue(r, g, b, a = 255) {
-  return a >= 180 && isCoreBlue(r, g, b) && (r + g + b) / 3 < EDGE_PALE_LIGHT
-}
-
-function isPaleSpill(r, g, b, a) {
-  if (a === 0 || a === 255) return false
-  const { sat, light } = pixelStats(r, g, b)
-  if (light >= 248 && sat <= FRINGE_MAX_SAT) return true
-  if (light >= FRINGE_LIGHT_MIN && sat <= FRINGE_MAX_SAT && a < 210) return true
-  if (light >= 190 && sat <= 90 && a < 150) return true
-  if (a < 44 && light >= 130) return true
-  return false
-}
-
-/**
- * Remove white / pale halos. May adjust edge blues contaminated by white matte.
- * Does not remove opaque core blue squircle pixels. Never snaps partial alpha to 255
- * (that causes visible jaggies on Dock / tab icons).
- */
-function cleanEdgeSpill(data, width, height) {
-  const channels = 4
-  const size = width * height
-
-  for (let p = 0; p < size; p++) {
-    const i = p * channels
-    const r = data[i]
-    const g = data[i + 1]
-    const b = data[i + 2]
-    const a = data[i + 3]
-
-    if (a === 255) continue
-
-    if (a === 0) continue
-
-    if (isPaleSpill(r, g, b, a) || (a < 36 && !isCoreBlue(r, g, b))) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-      continue
-    }
-
-    if (a < 200 && b < Math.max(r, g) - 28 && !isCoreBlue(r, g, b)) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-      continue
-    }
-
-    if (a < 100 && !isCoreBlue(r, g, b)) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-    }
-  }
-}
-
-/** Pale fringe connected to canvas edge (incl. light sky-blue from white matte). */
-function isExteriorSpill(r, g, b, a) {
-  if (a < 16) return true
-  if (isDeepBlue(r, g, b, a)) return false
-  const { sat, light } = pixelStats(r, g, b)
-  if (isWhiteish(r, g, b, a)) return true
-  if (light >= EDGE_PALE_LIGHT && sat < FRINGE_MAX_SAT) return true
-  if (light >= 148 && sat < 80 && a < 252) return true
-  if (!isCoreBlue(r, g, b) && light >= 130) return true
-  return false
-}
-
-function floodExteriorSpill(data, width, height) {
-  const channels = 4
-  const size = width * height
-  const spill = new Uint8Array(size)
+  const exterior = new Uint8Array(size)
   const queue = []
 
   const push = (x, y) => {
     const p = y * width + x
-    if (spill[p]) return
-    const i = p * channels
-    if (!isExteriorSpill(data[i], data[i + 1], data[i + 2], data[i + 3])) return
-    spill[p] = 1
+    if (exterior[p]) return
+    if (data[p * channels + 3] >= alphaCut) return
+    exterior[p] = 1
     queue.push(p)
   }
 
@@ -273,9 +83,153 @@ function floodExteriorSpill(data, width, height) {
     if (y < height - 1) push(x, y + 1)
   }
 
+  return exterior
+}
+
+function markExteriorNeighbors(exterior, width, height, depth = 2) {
+  const size = width * height
+  const near = new Uint8Array(size)
+  let frontier = []
+
   for (let p = 0; p < size; p++) {
-    if (!spill[p]) continue
+    if (!exterior[p]) continue
+    near[p] = 1
+    frontier.push(p)
+  }
+
+  for (let step = 0; step < depth; step++) {
+    const next = []
+    for (const p of frontier) {
+      const x = p % width
+      const y = (p - x) / width
+      const neighbors = [
+        [x - 1, y],
+        [x + 1, y],
+        [x, y - 1],
+        [x, y + 1]
+      ]
+      for (const [nx, ny] of neighbors) {
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue
+        const np = ny * width + nx
+        if (near[np]) continue
+        near[np] = 1
+        next.push(np)
+      }
+    }
+    frontier = next
+  }
+
+  return near
+}
+
+/** Wordmark: fill interior RGB-with-zero-alpha holes only. */
+function repairWordmarkAlpha(data, width, height) {
+  const channels = 4
+  const size = width * height
+  const exterior = floodExteriorMask(data, width, height, 20)
+
+  for (let p = 0; p < size; p++) {
+    if (exterior[p]) continue
     const i = p * channels
+    if (data[i + 3] >= 128) continue
+    if (Math.max(data[i], data[i + 1], data[i + 2]) > 10) data[i + 3] = 255
+  }
+}
+
+function pixelColorFlags(r, g, b) {
+  const light = (r + g + b) / 3
+  const sat = Math.max(r, g, b) - Math.min(r, g, b)
+  return {
+    light,
+    sat,
+    isOrange: r > g + 8 && r > b + 15 && sat > 28,
+    isDeepBlue: b >= r + 12 && b >= g + 4 && light < 185 && sat > 35
+  }
+}
+
+/** Cat white fur sits against orange — keep; squircle pale halo against blue — strip. */
+function hasOpaqueFurNeighbor(data, width, height, channels, p) {
+  const x = p % width
+  const y = (p - x) / width
+  const offsets = [
+    [x - 1, y],
+    [x + 1, y],
+    [x, y - 1],
+    [x, y + 1]
+  ]
+
+  for (const [nx, ny] of offsets) {
+    if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue
+    const ni = (ny * width + nx) * channels
+    if (data[ni + 3] < 200) continue
+    const { isOrange } = pixelColorFlags(data[ni], data[ni + 1], data[ni + 2])
+    if (isOrange) return true
+  }
+
+  return false
+}
+
+/**
+ * App icon: fill design-export holes (white cat face with alpha=0),
+ * strip squircle pale fringe on Dock, without hollowing the cat.
+ */
+function processAppIconAlpha(data, width, height) {
+  const channels = 4
+  const size = width * height
+  const exterior = floodExteriorMask(data, width, height, 24)
+  const nearExterior = markExteriorNeighbors(exterior, width, height, 8)
+
+  for (let p = 0; p < size; p++) {
+    const i = p * channels
+    const a = data[i + 3]
+
+    if (exterior[p]) {
+      if (a > 0) {
+        data[i] = 0
+        data[i + 1] = 0
+        data[i + 2] = 0
+        data[i + 3] = 0
+      }
+      continue
+    }
+
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+
+    // Design export: RGB painted but alpha fully zero (cat white face/chest).
+    if (a < 5 && Math.max(r, g, b) > 10) {
+      data[i + 3] = 255
+      continue
+    }
+
+    if (nearExterior[p]) continue
+    if (a >= 128) continue
+    const { light, sat } = pixelColorFlags(r, g, b)
+    // Resize fringe only: semi-transparent pale halos, not hidden interior holes.
+    if (a > 0 && light >= 145 && sat < 95) continue
+    if (Math.max(r, g, b) > 10) data[i + 3] = 255
+  }
+
+  for (let p = 0; p < size; p++) {
+    if (exterior[p] || !nearExterior[p]) continue
+
+    const i = p * channels
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+    const a = data[i + 3]
+    if (a === 0) continue
+
+    const { light, sat, isOrange, isDeepBlue } = pixelColorFlags(r, g, b)
+    if (isOrange || isDeepBlue) continue
+
+    const neutralPale = light >= 175 && sat < 58
+    const softFringe = a < 235 && light >= 118 && sat < 100
+    const squircleHalo =
+      (neutralPale || softFringe || a < 48) && !hasOpaqueFurNeighbor(data, width, height, channels, p)
+    if (!squircleHalo) continue
+
     data[i] = 0
     data[i + 1] = 0
     data[i + 2] = 0
@@ -283,175 +237,34 @@ function floodExteriorSpill(data, width, height) {
   }
 }
 
-/** Strip pale pixels in a few px ring outside deep blue (fixes top/left white halos). */
-function stripExteriorPaleRing(data, width, height, maxDepth = EDGE_RING_DEPTH) {
-  const channels = 4
-  const size = width * height
-  const dist = new Int16Array(size).fill(-1)
-  const queue = []
-
-  for (let p = 0; p < size; p++) {
-    if (data[p * channels + 3] < 12) {
-      dist[p] = 0
-      queue.push(p)
-    }
-  }
-
-  for (let qi = 0; qi < queue.length; qi++) {
-    const p = queue[qi]
-    const d = dist[p]
-    if (d >= maxDepth) continue
-    const x = p % width
-    const y = (p - x) / width
-    const neighbors = [
-      [x - 1, y],
-      [x + 1, y],
-      [x, y - 1],
-      [x, y + 1]
-    ]
-    for (const [nx, ny] of neighbors) {
-      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue
-      const np = ny * width + nx
-      if (dist[np] >= 0) continue
-      dist[np] = d + 1
-      queue.push(np)
-    }
-  }
-
-  for (let p = 0; p < size; p++) {
-    const d = dist[p]
-    if (d <= 0 || d > maxDepth) continue
-    const i = p * channels
-    const r = data[i]
-    const g = data[i + 1]
-    const b = data[i + 2]
-    const a = data[i + 3]
-    const { light, sat } = pixelStats(r, g, b)
-
-    if (isDeepBlue(r, g, b, a) && d >= maxDepth - 1) continue
-
-    const pale =
-      light >= EDGE_PALE_LIGHT ||
-      (light >= 145 && sat < 88) ||
-      !isCoreBlue(r, g, b) ||
-      a < 245
-
-    if (pale) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-    }
-  }
-}
-
-/** Prevent white RGB leaking through low alpha on dark Dock backgrounds. */
-function sanitizeEdgeRgb(data, width, height) {
-  const channels = 4
-  const size = width * height
-
-  for (let p = 0; p < size; p++) {
-    const i = p * channels
-    const r = data[i]
-    const g = data[i + 1]
-    const b = data[i + 2]
-    const a = data[i + 3]
-    const { light } = pixelStats(r, g, b)
-
-    if (a < 28) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-      continue
-    }
-
-    if (a < 200 && light >= EDGE_PALE_LIGHT) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-      continue
-    }
-
-    if (a < 255 && light >= 190 && !isDeepBlue(r, g, b, a)) {
-      data[i] = 0
-      data[i + 1] = 0
-      data[i + 2] = 0
-      data[i + 3] = 0
-    }
-  }
-}
-
-/** Soften alpha at transparent↔opaque boundaries to remove stair-step jaggies. */
-function featherAlphaEdges(data, width, height, passes = 2) {
-  const channels = 4
-  const size = width * height
-
-  for (let pass = 0; pass < passes; pass++) {
-    const alpha = new Uint8Array(size)
-    for (let p = 0; p < size; p++) alpha[p] = data[p * channels + 3]
-
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = 1; x < width - 1; x++) {
-        const p = y * width + x
-        const a = alpha[p]
-        const n = [alpha[p - 1], alpha[p + 1], alpha[p - width], alpha[p + width]]
-        const nearTransparent = a < 28 || n.some((v) => v < 28)
-        const nearOpaque = a > 220 || n.some((v) => v > 220)
-        if (!(nearTransparent && nearOpaque)) continue
-
-        let sum = 0
-        let count = 0
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            sum += alpha[(y + dy) * width + (x + dx)]
-            count++
-          }
-        }
-        data[p * channels + 3] = Math.round(sum / count)
-      }
-    }
-  }
-}
-
-function postKeyAppIconRgba(data, width, height, { feather = true } = {}) {
-  decontaminateWhiteSpill(data, width, height)
-  cleanEdgeSpill(data, width, height)
-  floodExteriorSpill(data, width, height)
-  stripExteriorPaleRing(data, width, height)
-  sanitizeEdgeRgb(data, width, height)
-  if (feather) featherAlphaEdges(data, width, height, 2)
-  sanitizeEdgeRgb(data, width, height)
-}
-
-function postKeyRgba(data, width, height) {
-  decontaminateWhiteSpill(data, width, height)
-  cleanEdgeSpill(data, width, height)
-}
-
-async function loadKeyedSource(fileName) {
+async function loadAppIconSource(fileName) {
   const from = path.join(srcDir, fileName)
-  if (!fs.existsSync(from)) {
-    throw new Error(`Missing source asset: ${from}`)
-  }
-
   const { data, info } = await sharp(from).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
-  keyWhiteBackgroundRgba(data, info.width, info.height)
-  postKeyRgba(data, info.width, info.height)
-
-  return sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
+  processAppIconAlpha(data, info.width, info.height)
+  return sharp(data, {
+    raw: { width: info.width, height: info.height, channels: 4 }
+  })
     .png()
     .toBuffer()
 }
 
-async function trimmedBuffer(keyed) {
-  return sharp(keyed).trim({ threshold: TRIM_THRESHOLD }).png().toBuffer()
+async function writeWordmark(fileName, toPath) {
+  const from = path.join(srcDir, fileName)
+  const { data, info } = await sharp(from).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  repairWordmarkAlpha(data, info.width, info.height)
+
+  fs.mkdirSync(path.dirname(toPath), { recursive: true })
+  await sharp(data, {
+    raw: { width: info.width, height: info.height, channels: 4 }
+  })
+    .png()
+    .toFile(toPath)
+  console.log(`✓ ${path.relative(root, toPath)}`)
 }
 
-/** Centre non-square art on a transparent square so corners stay symmetric when scaled. */
-async function squaredAppIconBuffer(keyed) {
-  const trimmed = await trimmedBuffer(keyed)
+/** Centre non-square art on a transparent square for symmetric scaling. */
+async function squaredAppIcon(source) {
+  const trimmed = await sharp(source).trim().png().toBuffer()
   const meta = await sharp(trimmed).metadata()
   const side = Math.max(meta.width ?? 0, meta.height ?? 0)
   return sharp(trimmed)
@@ -463,20 +276,13 @@ async function squaredAppIconBuffer(keyed) {
     .toBuffer()
 }
 
-async function writeTrimmedWordmark(keyed, toPath) {
-  fs.mkdirSync(path.dirname(toPath), { recursive: true })
-  await sharp(keyed).trim({ threshold: TRIM_THRESHOLD }).png().toFile(toPath)
-  console.log(`✓ ${path.relative(root, toPath)}`)
-}
-
-/** Scale with contain; optional inset adds transparent margin (see ICON_TRIM_INSET / MAC_DOCK_INSET). */
-function resizeAppIcon(trimmed, size, inset = 1) {
+async function writeAppIcon(source, dest, size, { inset = 1 } = {}) {
   const inner = Math.max(1, Math.round(size * inset))
   const pad = size - inner
   const padTop = Math.floor(pad / 2)
   const padLeft = Math.floor(pad / 2)
 
-  return sharp(trimmed)
+  const { data, info } = await sharp(source)
     .resize(inner, inner, {
       fit: 'contain',
       background: { r: 0, g: 0, b: 0, alpha: 0 },
@@ -489,49 +295,29 @@ function resizeAppIcon(trimmed, size, inset = 1) {
       right: pad - padLeft,
       background: { r: 0, g: 0, b: 0, alpha: 0 }
     })
-}
-
-function supersampleFactor(size) {
-  if (size <= 32) return 4
-  if (size <= 64) return 3
-  if (size <= 256) return 2
-  return 1
-}
-
-async function writeAppIconAlpha(trimmed, dest, size, { inset = 1 } = {}) {
-  const factor = supersampleFactor(size)
-  const renderSize = size * factor
-
-  const { data, info } = await resizeAppIcon(trimmed, renderSize, inset)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
 
-  postKeyAppIconRgba(data, info.width, info.height, { feather: true })
+  processAppIconAlpha(data, info.width, info.height)
 
-  let pipeline = sharp(data, {
+  fs.mkdirSync(path.dirname(dest), { recursive: true })
+  await sharp(data, {
     raw: { width: info.width, height: info.height, channels: 4 }
   })
-
-  if (factor > 1) {
-    pipeline = pipeline.resize(size, size, {
-      kernel: sharp.kernel.lanczos3,
-      fit: 'fill'
-    })
-  }
-
-  await pipeline.png().toFile(dest)
+    .png()
+    .toFile(dest)
 }
 
-async function writeFaviconSet(trimmed, outDir) {
+async function writeFaviconSet(source, outDir) {
   fs.mkdirSync(outDir, { recursive: true })
   for (const size of [16, 32, 48]) {
     const dest = path.join(outDir, `favicon-${size}.png`)
-    await writeAppIconAlpha(trimmed, dest, size, { inset: SCENE_INSET.favicon })
+    await writeAppIcon(source, dest, size, { inset: SCENE_INSET.favicon })
     console.log(`✓ ${path.relative(root, dest)}`)
   }
   const appleTouch = path.join(outDir, 'apple-touch-icon.png')
-  await writeAppIconAlpha(trimmed, appleTouch, 180, { inset: SCENE_INSET.webAppleTouch })
+  await writeAppIcon(source, appleTouch, 180, { inset: SCENE_INSET.webAppleTouch })
   console.log(`✓ ${path.relative(root, appleTouch)}`)
   await fs.promises.copyFile(path.join(outDir, 'favicon-32.png'), path.join(outDir, 'favicon.png'))
   console.log(`✓ ${path.relative(root, path.join(outDir, 'favicon.png'))}`)
@@ -546,35 +332,17 @@ async function mirrorFile(relativeName, destinations) {
   }
 }
 
-for (const file of Object.values(sources)) {
-  if (!fs.existsSync(path.join(srcDir, file))) {
-    console.error(`✗ Expected ${path.join(srcDir, file)}`)
-    process.exit(1)
-  }
-}
-
+assertSources()
 fs.mkdirSync(brandDir, { recursive: true })
 
-const wordmarkKeyed = await loadKeyedSource(sources.wordmark)
-await writeTrimmedWordmark(wordmarkKeyed, path.join(brandDir, 'logo.png'))
+await writeWordmark(sources.wordmark, path.join(brandDir, 'logo.png'))
 
-const appIconKeyed = await loadKeyedSource(sources.appIcon)
-const appIconSquared = await squaredAppIconBuffer(appIconKeyed)
-const { data: appSqData, info: appSqInfo } = await sharp(appIconSquared)
-  .ensureAlpha()
-  .raw()
-  .toBuffer({ resolveWithObject: true })
-postKeyAppIconRgba(appSqData, appSqInfo.width, appSqInfo.height)
-const appIconTrimmed = await sharp(appSqData, {
-  raw: { width: appSqInfo.width, height: appSqInfo.height, channels: 4 }
-})
-  .png()
-  .toBuffer()
+const appIconSquared = await squaredAppIcon(await loadAppIconSource(sources.appIcon))
 
-await writeFaviconSet(appIconTrimmed, brandDir)
+await writeFaviconSet(appIconSquared, brandDir)
 
 const iconPng = path.join(brandDir, 'icon.png')
-await writeAppIconAlpha(appIconTrimmed, iconPng, 1024, { inset: SCENE_INSET.brandArchive })
+await writeAppIcon(appIconSquared, iconPng, 1024, { inset: SCENE_INSET.brandArchive })
 console.log(`✓ ${path.relative(root, iconPng)}`)
 
 const buildDir = path.join(root, 'build')
@@ -588,15 +356,13 @@ fs.mkdirSync(iconset, { recursive: true })
 for (const size of [16, 32, 128, 256, 512]) {
   const out1 = path.join(iconset, `icon_${size}x${size}.png`)
   const out2 = path.join(iconset, `icon_${size}x${size}@2x.png`)
-  await writeAppIconAlpha(appIconTrimmed, out1, size, { inset: SCENE_INSET.macInstaller })
-  await writeAppIconAlpha(appIconTrimmed, out2, size * 2, { inset: SCENE_INSET.macInstaller })
+  await writeAppIcon(appIconSquared, out1, size, { inset: SCENE_INSET.macInstaller })
+  await writeAppIcon(appIconSquared, out2, size * 2, { inset: SCENE_INSET.macInstaller })
 }
 
 const iconIcns = path.join(brandDir, 'icon.icns')
 try {
-  execSync(`iconutil -c icns "${iconset}" -o "${iconIcns}"`, {
-    stdio: 'inherit'
-  })
+  execSync(`iconutil -c icns "${iconset}" -o "${iconIcns}"`, { stdio: 'inherit' })
   console.log(`✓ ${path.relative(root, iconIcns)}`)
 } catch {
   console.warn('⚠ iconutil failed — build/icon.png is still available for electron-builder')
@@ -605,7 +371,6 @@ try {
 fs.rmSync(iconset, { recursive: true, force: true })
 
 const webFaviconMirrors = (name) => [`website/${name}`, `server/admin/public/${name}`]
-
 const rendererPublicMirrors = (name) => [`src/renderer/public/${name}`]
 
 await mirrorFile('logo.png', [
@@ -620,15 +385,31 @@ for (const size of [16, 32, 48]) {
 }
 await mirrorFile('favicon.png', [...webFaviconMirrors('favicon.png'), ...rendererPublicMirrors('favicon.png')])
 await mirrorFile('apple-touch-icon.png', webFaviconMirrors('apple-touch-icon.png'))
-await writeAppIconAlpha(
-  appIconTrimmed,
+
+await writeAppIcon(
+  appIconSquared,
   path.join(root, 'src/renderer/public/apple-touch-icon.png'),
   180,
   { inset: SCENE_INSET.macDockRuntime }
 )
+console.log(`✓ ${path.relative(root, 'src/renderer/public/apple-touch-icon.png')}`)
+
+const dockIconPng = path.join(brandDir, 'dock-icon.png')
+await writeAppIcon(appIconSquared, dockIconPng, 512, { inset: SCENE_INSET.macDockRuntime })
+console.log(`✓ ${path.relative(root, dockIconPng)}`)
+
 await mirrorFile('icon.png', ['build/icon.png'])
+await mirrorFile('dock-icon.png', ['build/dock-icon.png'])
 if (fs.existsSync(iconIcns)) {
   await mirrorFile('icon.icns', ['build/icon.icns'])
 }
 
 console.log('Brand assets synced: petory_logo/ → brand/generated/ → deployment mirrors')
+
+const verification = await verifyBrandAssets(root)
+if (!verification.ok) {
+  console.error('✗ Brand asset verification failed:')
+  for (const err of verification.errors) console.error(`  - ${err}`)
+  process.exit(1)
+}
+console.log('✓ Brand assets verified (cat face + Dock edges)')

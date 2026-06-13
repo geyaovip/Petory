@@ -16,9 +16,9 @@ export const config = {
     'DATABASE_URL',
     'postgresql://petory:petory@localhost:5433/petory?schema=public'
   ),
-  minimaxApiKey: process.env.MINIMAX_API_KEY ?? '',
-  minimaxApiBase: process.env.MINIMAX_API_BASE ?? 'https://api.minimaxi.com',
-  minimaxGroupId: process.env.MINIMAX_GROUP_ID ?? '',
+  arkApiKey: process.env.ARK_API_KEY ?? '',
+  arkApiBase: (process.env.ARK_API_BASE ?? 'https://ark.cn-beijing.volces.com/api/v3').replace(/\/$/, ''),
+  arkImageModel: process.env.ARK_IMAGE_MODEL ?? 'doubao-seedream-5-0-260128',
   adminEmail: (process.env.ADMIN_EMAIL ?? 'admin@petory.app').toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD ?? 'petory-admin',
   operatorEmail: (process.env.OPERATOR_EMAIL ?? 'operator@petory.app').toLowerCase(),

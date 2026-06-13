@@ -1,9 +1,6 @@
-const SPECIES_LOCK = `Keep the same animal species as the reference (cat stays cat, dog stays dog).`
+export const PETORY_STYLE_PROMPT_BASE = `Keep the exact subject in the reference image unchanged, including identity, species, breed, face, colors, markings, ears, eyes, and body proportions. Change only the pose described below. Show one full-body subject on a plain background, with no text or extra objects.`
 
-/** Upload: short prompt — long "subject" wording + prompt_optimizer tends to ignore the reference. */
-export const PETORY_STYLE_PROMPT_BASE = `Image-to-image from the reference photo. Same pet: species, breed, colors, markings, face, ears, body shape. ${SPECIES_LOCK} Only change pose below. Plain background, full body, no text or extra objects.`
-
-export const ANCHOR_STYLE_PROMPT_BASE = `Same individual pet as the reference image. ${SPECIES_LOCK} Keep colors, markings, and proportions. Only change pose below. Plain background.`
+export const ANCHOR_STYLE_PROMPT_BASE = `Keep the exact same subject from the reference image. Preserve all identity details and change only the pose described below. Plain background.`
 
 /** @deprecated Use getStylePrompt('petory', pose) */
 export const PETORY_STYLE_PROMPT = `${PETORY_STYLE_PROMPT_BASE}

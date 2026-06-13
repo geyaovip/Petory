@@ -26,7 +26,7 @@ npm run server:db:up
 ```bash
 cd server
 cp .env.example .env
-# 编辑 .env：JWT_SECRET、MINIMAX_API_KEY、KIMI_API_KEY
+# 编辑 .env：JWT_SECRET、ARK_API_KEY、KIMI_API_KEY
 
 npm install
 npm run db:push
@@ -80,7 +80,7 @@ npm run dev
 
 - Hono + TypeScript
 - **Prisma + PostgreSQL**（本地 Docker；生产可用 Neon / Supabase / RDS 等）
-- 本地 `uploads/` 存图；MiniMax Key 仅服务端
+- 本地 `uploads/` 存图；火山方舟 Key 仅服务端
 
 ## 生产部署
 

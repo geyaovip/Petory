@@ -1,8 +1,8 @@
 import { loadUserSettings } from './settingsStore'
 
-export function getMinimaxApiKey(): string {
+export function getArkApiKey(): string {
   const settings = loadUserSettings()
-  return settings.minimaxApiKey || process.env['MINIMAX_API_KEY'] || ''
+  return settings.arkApiKey || process.env['ARK_API_KEY'] || ''
 }
 
 export function getKimiApiKey(): string {

@@ -1,8 +1,9 @@
 import { config } from 'dotenv'
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, screen } from 'electron'
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
-import { loadAppIcon } from './appIcon'
+import { loadDockIcon } from './appIcon'
 import { ERROR_MESSAGES } from '../../src/shared/constants'
 import { IPC, type MenuAction, type UploadPayload, type WindowPosition } from '../../src/shared/ipc'
 import type { PetVisualState } from '../../src/shared/types/growth'
@@ -150,20 +151,43 @@ import { fetchPaymentPlans, purchaseProMock } from './payment/paymentService'
 
 config({ path: path.resolve(process.cwd(), '.env') })
 
-const hasSingleInstanceLock = app.requestSingleInstanceLock()
-if (!hasSingleInstanceLock) {
-  app.quit()
-  process.exit(0)
+function clearStaleDevSingletonLocks(): void {
+  if (app.isPackaged) return
+
+  const userData =
+    process.platform === 'darwin'
+      ? path.join(os.homedir(), 'Library/Application Support/petory')
+      : process.platform === 'win32'
+        ? path.join(process.env.APPDATA ?? path.join(os.homedir(), 'AppData', 'Roaming'), 'petory')
+        : path.join(os.homedir(), '.config/petory')
+
+  for (const name of ['SingletonLock', 'SingletonCookie', 'SingletonSocket']) {
+    try {
+      fs.unlinkSync(path.join(userData, name))
+    } catch {
+      // ignore busy or missing
+    }
+  }
 }
 
-app.on('second-instance', () => {
-  const focusTarget =
-    getPetWindow() ?? getAuthWindow() ?? getOnboardingWindow() ?? BrowserWindow.getAllWindows()[0]
-  if (focusTarget && !focusTarget.isDestroyed()) {
-    if (focusTarget.isMinimized()) focusTarget.restore()
-    focusTarget.focus()
+clearStaleDevSingletonLocks()
+
+if (app.isPackaged) {
+  const hasSingleInstanceLock = app.requestSingleInstanceLock()
+  if (!hasSingleInstanceLock) {
+    app.quit()
+    process.exit(0)
   }
-})
+
+  app.on('second-instance', () => {
+    const focusTarget =
+      getPetWindow() ?? getAuthWindow() ?? getOnboardingWindow() ?? BrowserWindow.getAllWindows()[0]
+    if (focusTarget && !focusTarget.isDestroyed()) {
+      if (focusTarget.isMinimized()) focusTarget.restore()
+      focusTarget.focus()
+    }
+  })
+}
 
 function broadcastAuthStateChanged(): void {
   const state = buildAuthState()
@@ -795,9 +819,13 @@ async function bootstrapOnLaunch(): Promise<void> {
 }
 
 function applyAppIcon(): void {
-  const icon = loadAppIcon()
-  if (!icon || process.platform !== 'darwin' || !app.dock) return
-  app.dock.setIcon(icon)
+  try {
+    const icon = loadDockIcon()
+    if (!icon || process.platform !== 'darwin' || !app.dock) return
+    app.dock.setIcon(icon)
+  } catch (error) {
+    console.warn('[petory] failed to set Dock icon:', error)
+  }
 }
 
 app.whenReady().then(async () => {
@@ -823,7 +851,13 @@ app.whenReady().then(async () => {
   })
   registerChatShortcut()
   initAutoUpdater()
-  await bootstrapOnLaunch()
+  try {
+    await bootstrapOnLaunch()
+  } catch (error) {
+    console.error('[petory] bootstrap failed — opening auth window:', error)
+    recordCrash('main', error, 'bootstrapOnLaunch')
+    createAuthWindow()
+  }
   setTimeout(openDevelopmentPreviewPanel, 500)
 
   app.on('activate', () => {

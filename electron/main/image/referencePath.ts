@@ -1,7 +1,7 @@
 import fs from 'fs'
 import type { Pet } from '../../../src/shared/types/pet'
 
-/** Prefer the user's original upload for MiniMax subject_reference (matches manual website tests). */
+/** Prefer the user's original upload for image-to-image generation. */
 export function resolveUploadReferencePath(pet: Pet): string | null {
   if (pet.imageOriginalPath && fs.existsSync(pet.imageOriginalPath)) {
     return pet.imageOriginalPath

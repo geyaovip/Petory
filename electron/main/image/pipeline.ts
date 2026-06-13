@@ -26,9 +26,9 @@ import {
 } from '../poseService'
 import type { ReferenceMode } from '../../../src/shared/generation/reference'
 import { seedFromString, sortPosesIdleFirst } from '../../../src/shared/generation/reference'
-import { getMinimaxApiKey } from '../apiKeys'
+import { getArkApiKey } from '../apiKeys'
 import { ensurePetDirs, getPetById, updatePet } from '../petStore'
-import { generatePetImage } from './minimax'
+import { generatePetImage } from './seedream'
 import { hasUploadReference, resolveUploadReferencePath } from './referencePath'
 import { removeBackground } from './rembg'
 import {
@@ -73,7 +73,7 @@ function resolveRemoteReferenceMode(
 }
 
 function shouldUseRemoteGeneration(): boolean {
-  return isUsingRemoteQuota() && !getMinimaxApiKey()
+  return isUsingRemoteQuota() && !getArkApiKey()
 }
 
 async function processDownloadedPose(
@@ -169,7 +169,7 @@ async function generatePoseBatch(
     return processRemoteJobs(pet, petId, batch.jobs, existingPaths, progressOffset, progressTotal)
   }
 
-  broadcastGenerationPhase(petId, 'local', '本机 MiniMax 生成', progressTotal)
+  broadcastGenerationPhase(petId, 'local', '本机 Seedream 生成', progressTotal)
 
   const { generatedDir } = ensurePetDirs(petId)
   const posePaths: PetPoseAssets = { ...existingPaths }
@@ -220,7 +220,7 @@ async function generatePoseBatch(
         referenceMode = 'anchor'
       }
     } catch (error) {
-      console.error(`[petory] MiniMax generation failed for pose ${pose}:`, error)
+      console.error(`[petory] Seedream generation failed for pose ${pose}:`, error)
       if (pose === 'idle' && !posePaths.idle) {
         throw new Error('idle_generation_failed')
       }

@@ -18,7 +18,7 @@ export interface UserSettings {
   enableSound: boolean
   /** 后台 API 根地址；优先于 .env 中的 PETORY_API_BASE_URL */
   apiBaseUrl: string
-  minimaxApiKey: string
+  arkApiKey: string
   kimiApiKey: string
   featureGuideCompleted: boolean
   enableCrashReporting: boolean
@@ -45,7 +45,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   petOpacity: 1,
   enableSound: false,
   apiBaseUrl: '',
-  minimaxApiKey: '',
+  arkApiKey: '',
   kimiApiKey: '',
   featureGuideCompleted: false,
   enableCrashReporting: true,

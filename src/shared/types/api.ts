@@ -83,10 +83,18 @@ export interface ServerChatSendInput {
   }
 }
 
-export interface ServerChatSendResponse {
-  success: boolean
-  message?: ChatMessage
-  bubbleText?: string
-  chatQuota?: ServerQuotaView
-  code?: string
-}
+export type ServerChatSendResponse =
+  | {
+      success: true
+      message: ChatMessage
+      bubbleText?: string
+      chatQuota?: ServerQuotaView
+      code?: string
+    }
+  | {
+      success: false
+      message?: string
+      bubbleText?: string
+      chatQuota?: ServerQuotaView
+      code?: string
+    }

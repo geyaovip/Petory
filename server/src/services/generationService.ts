@@ -6,7 +6,7 @@ import { prisma } from '../lib/prisma.js'
 import { canUseStyle } from './entitlementService.js'
 import { assertDeviceAllowed } from './deviceGuardService.js'
 import { assertGenerationEnabled } from './systemConfigService.js'
-import { generateImage } from './minimaxService.js'
+import { generateImage } from './seedreamService.js'
 import { saveInputImage, saveOutputImage, toPublicUrl } from './storageService.js'
 
 const ALLOWED_MIME = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp'])
@@ -84,7 +84,7 @@ export async function createSinglePoseRegen(
   } catch (error) {
     const durationMs = Date.now() - started
     const message = error instanceof Error ? error.message : '生成失败'
-    const errorCode = message.startsWith('MINIMAX_') ? message.split(':')[0]! : 'GENERATION_FAILED'
+    const errorCode = message.startsWith('IMAGE_') ? message.split(':')[0]! : 'GENERATION_FAILED'
     await prisma.generationJob.update({
       where: { id: job.id },
       data: { status: 'failed', errorCode, errorMessage: message, durationMs }
@@ -92,15 +92,15 @@ export async function createSinglePoseRegen(
     return {
       success: false as const,
       code: errorCode,
-      message: message.includes('MINIMAX_NOT_CONFIGURED')
-        ? '服务端未配置 MiniMax API Key。'
+      message: message.includes('IMAGE_NOT_CONFIGURED')
+        ? '服务端未配置图像生成 API Key。'
         : '生成失败，请稍后重试。',
       jobId: job.id
     }
   }
 }
 
-/** Client-side MiniMax: record a succeeded batch for admin visibility (no server images). */
+/** Client-side image generation: record a succeeded batch for admin visibility. */
 export async function logClientLocalBatch(
   user: User,
   input: {
