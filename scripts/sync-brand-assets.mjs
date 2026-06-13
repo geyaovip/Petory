@@ -413,3 +413,9 @@ if (!verification.ok) {
   process.exit(1)
 }
 console.log('✓ Brand assets verified (cat face + Dock edges)')
+
+try {
+  execSync('node scripts/generate-og-share.mjs', { cwd: root, stdio: 'inherit' })
+} catch {
+  console.warn('⚠ og-share.png generation skipped')
+}
