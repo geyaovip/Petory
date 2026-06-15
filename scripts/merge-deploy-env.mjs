@@ -88,8 +88,11 @@ const template = fs.readFileSync(templatePath, 'utf-8')
 const templateLines = template.split('\n')
 
 let target = new Map()
+let baseLines = templateLines
 if (fs.existsSync(targetPath)) {
-  target = parseEnv(fs.readFileSync(targetPath, 'utf-8'))
+  const existingText = fs.readFileSync(targetPath, 'utf-8')
+  target = parseEnv(existingText)
+  baseLines = existingText.split('\n')
 }
 
 let merged = 0
@@ -101,10 +104,14 @@ for (const key of MERGE_KEYS) {
   merged += 1
 }
 
+const preserved = ['POSTGRES_PASSWORD', 'JWT_SECRET'].filter(
+  (key) => target.has(key) && target.get(key) && !source.has(key)
+)
+
 if (merged === 0 && fs.existsSync(targetPath)) {
   console.log('✓ deploy/server/.env already has the same ARK/mail/chat values as server/.env')
 } else {
-  const body = serializeEnv(templateLines, target)
+  const body = serializeEnv(baseLines, target)
   fs.mkdirSync(path.dirname(targetPath), { recursive: true })
   fs.writeFileSync(targetPath, body, 'utf-8')
   console.log(`✓ Updated deploy/server/.env (${merged} key(s) merged from server/.env)`)
@@ -117,6 +124,7 @@ if (!ark) {
   console.log(`✓ ARK_API_KEY present (${ark.length} chars)`)
 }
 
-console.log('\nNext on VPS:')
+console.log('\nNext on VPS (only updates ARK/mail/chat — keeps POSTGRES_PASSWORD & JWT_SECRET):')
 console.log('  scp deploy/server/.env ubuntu@YOUR_HOST:/home/ubuntu/apps/petory/current/deploy/server/.env')
-console.log('  ssh ubuntu@YOUR_HOST "cd /home/ubuntu/apps/petory/current && git pull --ff-only && docker compose -f deploy/server/compose.yaml up -d --build"')
+console.log('  ssh ubuntu@YOUR_HOST "cd /home/ubuntu/apps/petory/current && docker compose -f deploy/server/compose.yaml up -d --build api"')
+console.log('  curl -s https://api.petory.chat/health   # expect imageApi:true')
