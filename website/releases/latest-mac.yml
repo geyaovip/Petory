@@ -1,8 +1,8 @@
-version: 2.4.6
+version: 2.4.7
 files:
-  - url: https://github.com/geyaovip/petory/releases/download/v2.4.6/Petory-2.4.6-universal.dmg
-    sha512: UUxjvMKkAcW5Q+VpnK+N4NiwTol/vAjqwuMo9GVuOvbrJBVuwvwkyE5TSjBBDLRotcjagvAankqmQV/Mj5wdgg==
-    size: 195709863
-path: https://github.com/geyaovip/petory/releases/download/v2.4.6/Petory-2.4.6-universal.dmg
-sha512: UUxjvMKkAcW5Q+VpnK+N4NiwTol/vAjqwuMo9GVuOvbrJBVuwvwkyE5TSjBBDLRotcjagvAankqmQV/Mj5wdgg==
-releaseDate: '2026-06-15T07:14:13.329Z'
+  - url: https://github.com/geyaovip/petory/releases/download/v2.4.7/Petory-2.4.7-universal.dmg
+    sha512: 7Gkdsckda/Opub0daYYJStImP4xf9lrOwWuEx5+xIZZeDK9oFsJHuRZ3v/3nMumMmEn2PCaEmqZI5QafhK+Orw==
+    size: 197671826
+path: https://github.com/geyaovip/petory/releases/download/v2.4.7/Petory-2.4.7-universal.dmg
+sha512: 7Gkdsckda/Opub0daYYJStImP4xf9lrOwWuEx5+xIZZeDK9oFsJHuRZ3v/3nMumMmEn2PCaEmqZI5QafhK+Orw==
+releaseDate: '2026-06-15T10:15:39.855Z'
