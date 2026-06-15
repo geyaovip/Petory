@@ -79,14 +79,14 @@ export function invalidateSystemConfigCache(): void {
   cache = null
 }
 
-export async function getPlanGenerationLimit(plan: 'free' | 'pro'): Promise<number> {
+export async function getPlanGenerationLimit(_plan: 'free' | 'pro'): Promise<number> {
   const cfg = await getSystemConfig()
-  return plan === 'pro' ? cfg.proDailyGenerationLimit : cfg.freeDailyGenerationLimit
+  return cfg.freeDailyGenerationLimit
 }
 
-export async function getPlanChatLimit(plan: 'free' | 'pro'): Promise<number> {
+export async function getPlanChatLimit(_plan: 'free' | 'pro'): Promise<number> {
   const cfg = await getSystemConfig()
-  return plan === 'pro' ? cfg.proDailyChatLimit : cfg.freeDailyChatLimit
+  return cfg.freeDailyChatLimit
 }
 
 export async function updateSystemConfig(
@@ -113,9 +113,8 @@ export async function updateSystemConfig(
 export async function syncQuotaLimitsFromConfig(cfg: SystemConfigValues): Promise<void> {
   const users = await prisma.user.findMany({ include: { quota: true, chatQuota: true } })
   for (const user of users) {
-    const genLimit =
-      user.plan === 'pro' ? cfg.proDailyGenerationLimit : cfg.freeDailyGenerationLimit
-    const chatLimit = user.plan === 'pro' ? cfg.proDailyChatLimit : cfg.freeDailyChatLimit
+    const genLimit = cfg.freeDailyGenerationLimit
+    const chatLimit = cfg.freeDailyChatLimit
     if (user.quota) {
       await prisma.generationQuota.update({
         where: { userId: user.id },
@@ -167,8 +166,8 @@ export function getPublicAppStatus(cfg: SystemConfigValues) {
     registrationOpen: cfg.registrationOpen,
     generationServiceEnabled: cfg.generationServiceEnabled,
     chatServiceEnabled: cfg.chatServiceEnabled,
-    paymentEnabled: cfg.paymentEnabled,
-    mockPaymentEnabled: cfg.mockPaymentEnabled,
+    paymentEnabled: false,
+    mockPaymentEnabled: false,
     maintenanceNotice: cfg.maintenanceNotice || null,
     limits: {
       free: {
@@ -176,8 +175,8 @@ export function getPublicAppStatus(cfg: SystemConfigValues) {
         dailyChatLimit: cfg.freeDailyChatLimit
       },
       pro: {
-        dailyGenerationLimit: cfg.proDailyGenerationLimit,
-        dailyChatLimit: cfg.proDailyChatLimit
+        dailyGenerationLimit: cfg.freeDailyGenerationLimit,
+        dailyChatLimit: cfg.freeDailyChatLimit
       }
     }
   }

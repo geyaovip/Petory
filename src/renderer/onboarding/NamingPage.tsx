@@ -1,8 +1,7 @@
 import { useState, type ReactElement } from 'react'
 import { PERSONALITIES } from '@shared/constants'
 import { ONBOARDING_COPY } from '@shared/copy/onboarding'
-import { getStyleDefinition } from '@shared/styles'
-import type { PetPersonality, PetStyleType } from '@shared/types/pet'
+import type { PetPersonality } from '@shared/types/pet'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PageShell } from '../components/ui/PageShell'
@@ -11,21 +10,18 @@ import { Pill } from '../components/ui/Pill'
 interface NamingPageProps {
   petId: string
   isSample?: boolean
-  styleType?: PetStyleType
   onSubmit: () => void
 }
 
 export function NamingPage({
   petId,
   isSample = false,
-  styleType = 'petory',
   onSubmit
 }: NamingPageProps): ReactElement {
   const [name, setName] = useState(isSample ? '小橘子' : '')
   const [userCallName, setUserCallName] = useState('主人')
   const [personality, setPersonality] = useState<PetPersonality>('温柔陪伴型')
   const [submitting, setSubmitting] = useState(false)
-  const styleLabel = getStyleDefinition(styleType).labelZh
 
   const handleSubmit = async (): Promise<void> => {
     if (!name.trim() || submitting) return
@@ -48,7 +44,6 @@ export function NamingPage({
       <h1 className="text-[22px] font-semibold">{ONBOARDING_COPY.naming.title}</h1>
       <p className="mt-2 text-[13px] text-petory-text-secondary">
         {isSample ? ONBOARDING_COPY.naming.subtitleSample : ONBOARDING_COPY.naming.subtitleCustom}
-        {styleLabel ? ` ${ONBOARDING_COPY.naming.styleNote(styleLabel)}` : ''}
       </p>
 
       <label className="mt-8 block text-[13px] font-medium text-petory-text-secondary">

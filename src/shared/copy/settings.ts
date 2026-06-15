@@ -9,14 +9,9 @@ export const SETTINGS_COPY = {
   account: {
     quotaRemaining: (chat: number, gen: number) =>
       `今日剩余：对话 ${chat} 次 · 生成 ${gen} 次`,
-    proExpires: 'Pro 有效期至',
     cloudSync: '云端同步',
     genMaintenance: ' · 生成维护中',
     chatMaintenance: ' · 对话维护中',
-    redeemPlaceholder: '兑换码',
-    redeem: '兑换',
-    redeemSuccess: '兑换成功',
-    redeemSuccessWithPoses: (count: number) => `兑换成功，已补全 ${count} 张 Pro 姿势`,
     logout: '退出登录'
   },
   desktop: {
@@ -45,18 +40,18 @@ export const SETTINGS_COPY = {
     updated: '性格已更新'
   },
   poseCompletion: {
-    title: 'Pro 姿势补全',
-    hint: '升级 Pro 后可为已有桌宠补生成专注、睡觉等姿势（不消耗生成额度）。',
+    title: '姿势补全',
+    hint: '为已有桌宠补生成缺失的六种状态姿势。',
     missing: (name: string, count: number) => `${name}：缺 ${count} 种`,
     running: '补全中…',
-    cta: '补全 Pro 姿势',
+    cta: '补全姿势',
     success: (total: number) => (total > 0 ? `已补全 ${total} 张姿势图` : '姿势已是最新')
   },
   activePet: {
     title: '当前桌宠',
-    lastStyle: (style: string, poseCount: number) =>
-      `上次生成风格：${style} · ${poseCount} 种姿势`,
-    replace: '更换桌宠 / 换风格'
+    lastStyle: (_style: string, poseCount: number) =>
+      `原图一致 · ${poseCount} 种姿势`,
+    replace: '更换桌宠'
   },
   legal: {
     title: '法律与隐私',

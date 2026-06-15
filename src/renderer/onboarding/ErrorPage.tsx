@@ -12,7 +12,6 @@ interface ErrorPageProps {
 }
 
 function retryLabel(code: OnboardingErrorCode): string {
-  if (code === 'style_locked') return '返回选风格'
   if (code === 'network_error' || code === 'rate_limit') return '重试'
   if (code === 'service_disabled') return '稍后再试'
   return '重试'
@@ -41,17 +40,6 @@ export function ErrorPage({
         {showTryAgain ? (
           <Button fullWidth onClick={onTryAgain}>
             {retryLabel(code)}
-          </Button>
-        ) : null}
-        {code === 'style_locked' ? (
-          <Button
-            fullWidth
-            variant="secondary"
-            onClick={() => {
-              window.petory.settings.open()
-            }}
-          >
-            去设置兑换 Pro
           </Button>
         ) : null}
         <Button fullWidth variant={showTryAgain ? 'secondary' : 'primary'} onClick={onUploadAnother}>

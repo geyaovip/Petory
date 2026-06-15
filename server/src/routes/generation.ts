@@ -11,7 +11,6 @@ import { canConsumeGeneration, consumeGeneration, getQuotaView } from '../servic
 import { assertDeviceAllowed } from '../services/deviceGuardService.js'
 import { prisma } from '../lib/prisma.js'
 
-const STYLE_TYPES = new Set(['petory', 'pixel', 'sticker', 'plush', 'clay', 'cyber'])
 const POSES = new Set(['idle', 'happy', 'sleep', 'focus', 'remind', 'angry'])
 
 function errorStatus(code?: string): number {
@@ -76,10 +75,7 @@ generationRoutes.post('/log-local-batch', async (c) => {
     return c.json({ success: false, code: deviceCheck.code, message: deviceCheck.message }, 403)
   }
 
-  const styleType = String(body.styleType ?? 'petory')
-  if (!STYLE_TYPES.has(styleType)) {
-    return c.json({ success: false, message: '无效的风格类型。' }, 400)
-  }
+  const styleType: PetStyleType = 'petory'
 
   const poses = Array.isArray(body.poses)
     ? body.poses.filter((pose): pose is PetPoseType => POSES.has(pose))
@@ -87,7 +83,7 @@ generationRoutes.post('/log-local-batch', async (c) => {
 
   await logClientLocalBatch(user, {
     deviceId: body.deviceId,
-    styleType: styleType as PetStyleType,
+    styleType,
     poses,
     clientPetId: body.clientPetId
   })
@@ -103,12 +99,11 @@ generationRoutes.post('/batch', async (c) => {
 
   const body = await c.req.parseBody()
   const image = body['image']
-  const styleType = String(body['styleType'] ?? 'petory')
+  const styleType: PetStyleType = 'petory'
   const deviceId = body['deviceId'] ? String(body['deviceId']) : undefined
   const poses = parsePosesJson(body['poses'] ? String(body['poses']) : undefined, user)
 
   if (!(image instanceof File)) return c.json({ success: false, message: '请上传图片。' }, 400)
-  if (!STYLE_TYPES.has(styleType)) return c.json({ success: false, message: '无效的风格类型。' }, 400)
   if (image.size > config.maxUploadBytes) {
     return c.json({ success: false, message: '图片超过 10MB 限制。' }, 400)
   }
@@ -117,7 +112,7 @@ generationRoutes.post('/batch', async (c) => {
   const result = await runGenerationBatch(user, {
     imageBuffer: buffer,
     mimeType: image.type || 'image/png',
-    styleType: styleType as PetStyleType,
+    styleType,
     poses,
     deviceId,
     jobType: 'full_batch'
@@ -138,7 +133,7 @@ generationRoutes.post('/complete-poses', async (c) => {
 
   const body = await c.req.parseBody()
   const image = body['image']
-  const styleType = String(body['styleType'] ?? 'petory')
+  const styleType: PetStyleType = 'petory'
   const deviceId = body['deviceId'] ? String(body['deviceId']) : undefined
   const posesRaw = body['poses'] ? String(body['poses']) : '[]'
   let poses: PetPoseType[]
@@ -157,7 +152,7 @@ generationRoutes.post('/complete-poses', async (c) => {
   const result = await runGenerationBatch(user, {
     imageBuffer: buffer,
     mimeType: image.type || 'image/png',
-    styleType: styleType as PetStyleType,
+    styleType,
     poses,
     deviceId,
     jobType: 'pose_completion'
@@ -176,12 +171,11 @@ generationRoutes.post('/regenerate-pose', async (c) => {
 
   const body = await c.req.parseBody()
   const image = body['image']
-  const styleType = String(body['styleType'] ?? 'petory')
+  const styleType: PetStyleType = 'petory'
   const pose = String(body['pose'] ?? 'idle')
   const deviceId = body['deviceId'] ? String(body['deviceId']) : undefined
 
   if (!(image instanceof File)) return c.json({ success: false, message: '请上传图片。' }, 400)
-  if (!STYLE_TYPES.has(styleType)) return c.json({ success: false, message: '无效的风格类型。' }, 400)
   if (!POSES.has(pose)) return c.json({ success: false, message: '无效的姿势类型。' }, 400)
   if (image.size > config.maxUploadBytes) {
     return c.json({ success: false, message: '图片超过 10MB 限制。' }, 400)
@@ -191,7 +185,7 @@ generationRoutes.post('/regenerate-pose', async (c) => {
   const result = await createSinglePoseRegen(user, {
     imageBuffer: buffer,
     mimeType: image.type || 'image/png',
-    styleType: styleType as PetStyleType,
+    styleType,
     pose: pose as PetPoseType,
     deviceId
   })
@@ -210,7 +204,7 @@ generationRoutes.post('/jobs', async (c) => {
 
   const body = await c.req.parseBody()
   const image = body['image']
-  const styleType = String(body['styleType'] ?? 'petory')
+  const styleType: PetStyleType = 'petory'
   const pose = String(body['pose'] ?? 'idle')
   const deviceId = body['deviceId'] ? String(body['deviceId']) : undefined
 
@@ -220,7 +214,7 @@ generationRoutes.post('/jobs', async (c) => {
   const result = await runGenerationBatch(user, {
     imageBuffer: buffer,
     mimeType: image.type || 'image/png',
-    styleType: styleType as PetStyleType,
+    styleType,
     poses: [pose as PetPoseType],
     deviceId,
     jobType: 'full_batch'

@@ -47,7 +47,7 @@ export async function getQuotaView(user: User) {
     remainingToday: remaining,
     bonusQuota: quota.bonusQuota,
     totalUsed: quota.totalUsed,
-    isProUser: user.plan === 'pro'
+    isProUser: false
   }
 }
 
@@ -59,7 +59,7 @@ export async function canConsumeGeneration(user: User): Promise<{ ok: true } | {
     return {
       ok: false,
       code: 'QUOTA_EXCEEDED',
-      message: '今日生成次数已用完，明天再来或升级 Pro。'
+      message: '今日生成次数已用完，请明天再来。'
     }
   }
   return { ok: true }

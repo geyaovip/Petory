@@ -17,19 +17,16 @@ const GREETINGS = [
 
 const COMPANION_GREETINGS = ['嗯？', '我也在这儿～', '主宠在那边，我陪你待着。']
 
-function poseAnimation(state: PetVisualState, hasMultiPose: boolean): string {
-  if (hasMultiPose) {
-    return state === 'idle' ? 'animate-pet-float' : state === 'sleep' ? 'opacity-80' : ''
-  }
-  const legacy: Record<PetVisualState, string> = {
+function poseAnimation(state: PetVisualState): string {
+  const animations: Record<PetVisualState, string> = {
     idle: 'animate-pet-float',
     happy: 'animate-pet-happy',
-    sleep: 'animate-pet-sleep opacity-60',
+    sleep: 'animate-pet-sleep',
     focus: 'animate-pet-focus',
     remind: 'animate-pet-remind',
     angry: 'animate-pet-angry'
   }
-  return legacy[state]
+  return animations[state]
 }
 
 interface PetOverlayProps {
@@ -184,7 +181,7 @@ export function PetOverlay({ petId }: PetOverlayProps): ReactElement {
         />
         <div
           data-pet-hit
-          className={`electron-no-drag cursor-grab touch-none active:cursor-grabbing ${poseAnimation(displayState, hasMultiPose)}`}
+          className={`electron-no-drag relative cursor-grab touch-none will-change-transform active:cursor-grabbing ${poseAnimation(displayState)}`}
           onPointerDown={drag.onPointerDown}
           onContextMenu={(e) => {
             e.preventDefault()
@@ -193,16 +190,32 @@ export function PetOverlay({ petId }: PetOverlayProps): ReactElement {
         >
           {petImage ? (
             <img
+              key={`${displayState}-${petImage}`}
               data-pet-hit
               src={petImage}
               alt={petName ?? '桌宠'}
-              className="w-auto object-contain drop-shadow-md transition-opacity duration-300"
+              className="animate-pet-pose-enter w-auto object-contain drop-shadow-md"
               style={{ height: petHeight }}
               draggable={false}
             />
           ) : (
             <PetPlaceholder />
           )}
+          {displayState === 'sleep' ? (
+            <div className="pointer-events-none absolute right-[8%] top-[2%] text-petory-text-secondary" aria-hidden>
+              <span className="absolute animate-pet-zzz-one text-[13px] font-semibold">Z</span>
+              <span className="absolute animate-pet-zzz-two text-[10px] font-semibold">z</span>
+              <span className="absolute animate-pet-zzz-three text-[8px] font-semibold">z</span>
+            </div>
+          ) : null}
+          {displayState === 'remind' ? (
+            <span
+              className="pointer-events-none absolute right-[4%] top-[8%] flex h-7 w-7 animate-pet-alert-pop items-center justify-center rounded-full border border-petory-warning/30 bg-petory-warning-soft text-[15px] font-bold text-petory-warning shadow-bubble"
+              aria-hidden
+            >
+              !
+            </span>
+          ) : null}
         </div>
         {!isPrimary && petName ? (
           <span

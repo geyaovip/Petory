@@ -15,7 +15,6 @@ import type {
   AuthState,
   LoginInput,
   MagicLinkRequestResult,
-  PoseCompletionSummary,
   RegisterInput
 } from '../../src/shared/types/auth'
 import type { UserSettings } from '../../src/shared/types/settings'
@@ -32,13 +31,10 @@ import type {
   PetIpcResult,
   PoseCompletionStatus,
   RegeneratePoseResult,
-  PetPersonality,
-  PetStyleType
+  PetPersonality
 } from '../../src/shared/types/pet'
 import type { OnboardingIntent } from '../../src/shared/types/onboarding'
-import type { StyleCatalogItem } from '../../src/shared/types/styles'
 import type { UpdateState } from '../../src/shared/types/update'
-import type { PaymentPlan, PaymentPlanId } from '../../src/shared/types/payment'
 
 contextBridge.exposeInMainWorld('petory', {
   platform: process.platform as NodeJS.Platform,
@@ -78,14 +74,8 @@ contextBridge.exposeInMainWorld('petory', {
     getActive: (): Promise<Pet | null> => ipcRenderer.invoke(IPC.pet.getActive),
     getActiveImage: (): Promise<string | null> => ipcRenderer.invoke(IPC.pet.getActiveImage),
     upload: (payload: UploadPayload) => ipcRenderer.invoke(IPC.pet.upload, payload),
-    generate: (petId: string, styleType?: PetStyleType): Promise<PetIpcResult> =>
-      ipcRenderer.invoke(IPC.pet.generate, petId, styleType),
-    getStyleCatalog: (): Promise<StyleCatalogItem[]> => ipcRenderer.invoke(IPC.pet.getStyleCatalog),
-    setStyle: (
-      petId: string,
-      styleType: PetStyleType
-    ): Promise<{ success: true; pet: Pet } | { success: false; message: string }> =>
-      ipcRenderer.invoke(IPC.pet.setStyle, petId, styleType),
+    generate: (petId: string): Promise<PetIpcResult> =>
+      ipcRenderer.invoke(IPC.pet.generate, petId),
     getPreviewImage: (petId: string): Promise<string | null> => ipcRenderer.invoke(IPC.pet.getPreviewImage, petId),
     getImage: (petId: string, pose?: PetVisualState): Promise<string | null> =>
       ipcRenderer.invoke(IPC.pet.getImage, petId, pose),
@@ -95,7 +85,7 @@ contextBridge.exposeInMainWorld('petory', {
       name: string
       isPrimary: boolean
       personality: PetPersonality
-      styleType: PetStyleType
+      poseCount: number
     } | null> => ipcRenderer.invoke(IPC.pet.getSummary, petId),
     finalize: (input: FinalizePetInput): Promise<Pet> => ipcRenderer.invoke(IPC.pet.finalize, input),
     openOnboarding: (intent?: OnboardingIntent): void => ipcRenderer.send(IPC.pet.openOnboarding, intent),
@@ -223,7 +213,6 @@ contextBridge.exposeInMainWorld('petory', {
     login: (input: LoginInput): Promise<AuthActionResult> => ipcRenderer.invoke(IPC.auth.login, input),
     register: (input: RegisterInput): Promise<AuthActionResult> => ipcRenderer.invoke(IPC.auth.register, input),
     logout: (): Promise<AuthActionResult> => ipcRenderer.invoke(IPC.auth.logout),
-    redeemCode: (code: string): Promise<AuthActionResult> => ipcRenderer.invoke(IPC.auth.redeemCode, code),
     refresh: (): Promise<AuthState> => ipcRenderer.invoke(IPC.auth.refresh),
     onStateChanged: (callback: (state: AuthState) => void): (() => void) => {
       const handler = (_event: Electron.IpcRendererEvent, state: AuthState): void => callback(state)
@@ -259,18 +248,5 @@ contextBridge.exposeInMainWorld('petory', {
   crash: {
     reportRenderer: (message: string, stack?: string): void =>
       ipcRenderer.send(IPC.crash.reportRenderer, message, stack)
-  },
-  payment: {
-    getPlans: (): Promise<PaymentPlan[]> => ipcRenderer.invoke(IPC.payment.getPlans),
-    purchaseMock: (
-      planId: PaymentPlanId
-    ): Promise<
-      | {
-          success: true
-          state: AuthState
-          poseCompletion?: PoseCompletionSummary
-        }
-      | { success: false; message: string }
-    > => ipcRenderer.invoke(IPC.payment.purchaseMock, planId)
   }
 })

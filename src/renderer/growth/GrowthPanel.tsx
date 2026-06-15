@@ -67,7 +67,7 @@ export function GrowthPanel(): ReactElement {
           <div>
             <p className="text-[20px] font-semibold">{stats.name}</p>
             <p className="text-[13px] text-petory-text-secondary">
-              Lv.{stats.level} · {stats.styleLabel}
+              Lv.{stats.level} · 原图一致
             </p>
           </div>
           <span className="rounded-full bg-petory-primary-soft px-3 py-1 text-[12px] font-medium text-petory-primary">

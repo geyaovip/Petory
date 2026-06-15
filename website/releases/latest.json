@@ -1,20 +1,20 @@
 {
-  "version": "2.4.5",
-  "releasedAt": "2026-06-12",
+  "version": "2.4.6",
+  "releasedAt": "2026-06-15",
   "mac": {
-    "fileName": "Petory-2.4.5-universal.dmg",
-    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.5/Petory-2.4.5-universal.dmg",
+    "fileName": "Petory-2.4.6-universal.dmg",
+    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.6/Petory-2.4.6-universal.dmg",
     "sizeLabel": "~183 MB"
   },
   "win": {
-    "fileName": "Petory-Setup-2.4.5.exe",
-    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.5/Petory-Setup-2.4.5.exe",
+    "fileName": "Petory-Setup-2.4.6.exe",
+    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.6/Petory-Setup-2.4.6.exe",
     "sizeLabel": "~86 MB"
   },
   "updateFeed": "https://petory.chat/releases",
   "changelog": [
-    "修复 Dock/安装包图标四角发白：保留圆角外透明通道",
-    "浏览器标签 favicon 仍用实色蓝底，并修正背景色采样逻辑",
-    "Dock 与安装包图标恢复与源图一致的 squircle 透明圆角"
+    "简化创建流程：移除风格选择步骤，默认使用 Petory 风格",
+    "设置页与权益逻辑精简，生成与配额规则对齐",
+    "网站与管理端 favicon 更新至 v11"
   ]
 }

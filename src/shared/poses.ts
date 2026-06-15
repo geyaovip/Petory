@@ -19,13 +19,13 @@ export const PET_POSE_LABELS: Record<PetPoseType, string> = {
   angry: '小生气'
 }
 
-export const FREE_POSES: PetPoseType[] = ['idle', 'happy', 'remind']
+export const FREE_POSES: PetPoseType[] = PET_POSE_ORDER
 export const PRO_POSES: PetPoseType[] = PET_POSE_ORDER
 
 export function getPoseFileName(pose: PetPoseType): string {
   return `pose-${pose}.png`
 }
 
-export function getPosesForPlan(plan: PlanTier): PetPoseType[] {
-  return plan === 'pro' ? PRO_POSES : FREE_POSES
+export function getPosesForPlan(_plan: PlanTier): PetPoseType[] {
+  return PET_POSE_ORDER
 }

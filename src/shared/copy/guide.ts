@@ -2,7 +2,7 @@ export type GuideStepId =
   | 'drag'
   | 'bubble'
   | 'menu'
-  | 'styles'
+  | 'identity'
   | 'multiPet'
   | 'poses'
 
@@ -35,19 +35,19 @@ export const GUIDE_COPY = {
       body: '在桌宠上右键，可开始专注、查看成长、打开设置，或更换宠物。'
     },
     {
-      id: 'styles',
-      title: '多种画风',
-      body: '创建或更换桌宠时可选不同风格；Pro 可解锁像素、贴纸、毛绒等画风。宠物管理里也能换风格重新生成。'
+      id: 'identity',
+      title: '忠于原图',
+      body: '上传照片后会直接生成桌宠，不做风格迁移，并尽量保留主体的外形、颜色、纹理和标志性细节。'
     },
     {
       id: 'multiPet',
-      title: '多宠并行（Pro）',
+      title: '多宠陪伴',
       body: '在宠物管理中把多只桌宠「显示在桌面」。主宠负责聊天与成长，同伴宠会一起陪你待着。'
     },
     {
       id: 'poses',
       title: '多姿势切换',
-      body: '生成桌宠时会产出多种姿势。专注、开心、提醒、久未互动睡觉等状态下，主宠会自动换姿势图。升级 Pro 可补全缺失姿势。'
+      body: '每只桌宠默认生成六种姿势。专注、开心、提醒、睡觉等状态下，主宠会自动切换对应姿势。'
     }
   ] as const satisfies readonly GuideStep[]
 } as const

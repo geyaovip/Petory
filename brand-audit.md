@@ -22,7 +22,8 @@
 
 3. Browser and window icons: healthy.
    - Electron renderer/window icons use transparent rounded artwork with 72% inset at 16 px and 82% at 32/48 px.
-   - Website and admin favicons use the same opaque blue-background output and no longer diverge.
+   - Website and admin favicons use the same transparent rounded 32/16 px outputs and no longer diverge.
+   - Larger opaque 96/192 px files remain metadata-only and are not declared as browser-tab icons.
    - Website icon URLs now use `v=10` to avoid stale browser caches.
 
 4. Apple Touch icon: healthy.

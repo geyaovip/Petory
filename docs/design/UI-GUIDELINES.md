@@ -536,7 +536,7 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 | 场景 | 输出 | 透明边距 (inset) | 说明 |
 |------|------|------------------|------|
 | 客户端窗口 / 任务切换 | `favicon-16/32/48.png` | **0.72 / 0.82** | 透明圆角，小尺寸保留独立安全区 |
-| 官网 / 管理端标签 | `website/favicon*`、`server/admin/public/favicon*` | **0.84** | 不透明蓝底，避免浏览器深浅底色产生黑边或白边 |
+| 官网 / 管理端标签 | `website/favicon*`、`server/admin/public/favicon*` | **0.72 / 0.82** | 与客户端标签同源的透明圆角小尺寸图标；HTML 只声明 32/16px |
 | 官网 / 管理端书签 | `apple-touch-icon.png` | **1**（无） | 强制不透明，由 iOS/macOS 负责外层圆角 |
 | mac 客户端 Dock（开发运行） | `build/dock-icon.png`（512px） | **0.80** | `loadDockIcon()` 优先加载 |
 | mac 客户端 Dock（备用） | `src/renderer/public/apple-touch-icon.png` | **0.80** | 对齐系统 Dock 视觉尺寸 |

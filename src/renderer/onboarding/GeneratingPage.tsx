@@ -1,12 +1,7 @@
 import { useEffect, useState, type ReactElement } from 'react'
 import { ONBOARDING_COPY } from '@shared/copy/onboarding'
-import { getStyleDefinition } from '@shared/styles'
-import type { GenerationPhase, PetStyleType } from '@shared/types/pet'
+import type { GenerationPhase } from '@shared/types/pet'
 import { PageShell } from '../components/ui/PageShell'
-
-interface GeneratingPageProps {
-  styleType?: PetStyleType
-}
 
 const PHASE_HEADLINE: Record<GenerationPhase, string> = {
   upload: ONBOARDING_COPY.generating.upload,
@@ -14,8 +9,7 @@ const PHASE_HEADLINE: Record<GenerationPhase, string> = {
   local: ONBOARDING_COPY.generating.local
 }
 
-export function GeneratingPage({ styleType = 'petory' }: GeneratingPageProps): ReactElement {
-  const styleLabel = getStyleDefinition(styleType).labelZh
+export function GeneratingPage(): ReactElement {
   const [phase, setPhase] = useState<GenerationPhase>('remote')
   const [poseLabel, setPoseLabel] = useState('准备中')
   const [progress, setProgress] = useState({ index: 0, total: 0 })
@@ -52,7 +46,7 @@ export function GeneratingPage({ styleType = 'petory' }: GeneratingPageProps): R
         <p className="mt-2 text-[13px] text-petory-text-secondary">{detailLine}</p>
       ) : null}
       <p className="mt-1 text-[12px] text-petory-text-tertiary">
-        {ONBOARDING_COPY.generating.styleNote(styleLabel)}
+        {ONBOARDING_COPY.generating.identityNote}
       </p>
       <div className="mt-8 h-0.5 w-48 overflow-hidden rounded-full bg-petory-track">
         <div

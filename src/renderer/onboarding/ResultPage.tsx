@@ -1,48 +1,32 @@
 import { useEffect, useState, type ReactElement } from 'react'
 import { ONBOARDING_COPY } from '@shared/copy/onboarding'
-import { getStyleDefinition } from '@shared/styles'
-import type { PetStyleType } from '@shared/types/pet'
 import { Button } from '../components/ui/Button'
-import { StylePicker } from '../components/StylePicker'
 import { PageShell } from '../components/ui/PageShell'
-import { TextButton } from '../components/ui/TextButton'
 
 interface ResultPageProps {
   petId: string
-  initialStyle: PetStyleType
-  lastUsedStyle?: PetStyleType
   onUse: () => void
-  onRegenerate: (style: PetStyleType) => void
+  onRegenerate: () => void
   onUploadAnother: () => void
 }
 
 export function ResultPage({
   petId,
-  initialStyle,
-  lastUsedStyle,
   onUse,
   onRegenerate,
   onUploadAnother
 }: ResultPageProps): ReactElement {
   const [preview, setPreview] = useState<string | null>(null)
-  const [style, setStyle] = useState<PetStyleType>(initialStyle)
-  const [showRestyle, setShowRestyle] = useState(false)
 
   useEffect(() => {
     void window.petory.pet.getPreviewImage(petId).then(setPreview)
   }, [petId])
 
-  useEffect(() => {
-    setStyle(initialStyle)
-  }, [initialStyle])
-
-  const styleLabel = getStyleDefinition(style).labelZh
-
   return (
     <PageShell className="items-center">
       <h1 className="w-full text-center text-[22px] font-semibold">{ONBOARDING_COPY.result.title}</h1>
       <p className="mt-2 text-center text-[13px] text-petory-text-secondary">
-        {ONBOARDING_COPY.result.subtitle(styleLabel)}
+        {ONBOARDING_COPY.result.subtitle}
       </p>
 
       <div className="bg-petory-checker mt-8 flex h-[240px] w-full items-center justify-center rounded-2xl border border-petory-border">
@@ -58,19 +42,9 @@ export function ResultPage({
           {ONBOARDING_COPY.result.useCta}
         </Button>
 
-        {!showRestyle ? (
-          <TextButton onClick={() => setShowRestyle(true)}>{ONBOARDING_COPY.result.restyleToggle}</TextButton>
-        ) : (
-          <div className="w-full rounded-2xl border border-petory-border bg-petory-surface p-4">
-            <p className="text-[12px] text-petory-text-secondary">{ONBOARDING_COPY.result.restyleHint}</p>
-            <div className="mt-3">
-              <StylePicker value={style} onChange={setStyle} lastUsedStyle={lastUsedStyle} />
-            </div>
-            <Button className="mt-4" fullWidth variant="secondary" onClick={() => onRegenerate(style)}>
-              {ONBOARDING_COPY.result.regenerate}
-            </Button>
-          </div>
-        )}
+        <Button fullWidth variant="secondary" onClick={onRegenerate}>
+          {ONBOARDING_COPY.result.regenerate}
+        </Button>
 
         <Button fullWidth variant="ghost" onClick={onUploadAnother}>
           {ONBOARDING_COPY.result.uploadAnother}

@@ -1,30 +1,9 @@
-import { getPosesForPlan } from '../../../src/shared/poses.js'
-import { getStyleDefinition } from '../../../src/shared/styles.js'
-import type { PlanTier } from '../../../src/shared/types/auth.js'
-import type { PetPoseType, PetStyleType } from '../../../src/shared/types/pet.js'
+import { PET_POSE_ORDER } from '../../../src/shared/poses.js'
+import type { PetPoseType } from '../../../src/shared/types/pet.js'
 import type { User } from '@prisma/client'
 
-export function userPlan(user: User): PlanTier {
-  return user.plan as PlanTier
-}
-
-export function canUseStyle(
-  user: User,
-  styleType: PetStyleType
-): { ok: true } | { ok: false; code: string; message: string } {
-  const style = getStyleDefinition(styleType)
-  if (style.proOnly && userPlan(user) !== 'pro') {
-    return {
-      ok: false,
-      code: 'STYLE_LOCKED',
-      message: `「${style.labelZh}」为 Pro 专属风格，请升级 Pro 后使用。`
-    }
-  }
-  return { ok: true }
-}
-
-export function defaultPosesForUser(user: User): PetPoseType[] {
-  return getPosesForPlan(userPlan(user))
+export function defaultPosesForUser(_user: User): PetPoseType[] {
+  return PET_POSE_ORDER
 }
 
 export function validatePoses(
@@ -37,7 +16,7 @@ export function validatePoses(
     return {
       ok: false,
       code: 'POSE_LOCKED',
-      message: `当前套餐不支持姿势：${invalid.join(', ')}`
+      message: `不支持的姿势：${invalid.join(', ')}`
     }
   }
   if (poses.length === 0) {

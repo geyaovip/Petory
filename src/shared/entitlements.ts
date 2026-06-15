@@ -2,11 +2,11 @@ import type { EntitlementLimits, PlanTier } from './types/auth'
 
 export const PLAN_LIMITS: Record<PlanTier, EntitlementLimits> = {
   free: {
-    maxPets: 1,
-    maxDesktopPets: 1,
+    maxPets: 10,
+    maxDesktopPets: 5,
     dailyChatLimit: 20,
     dailyGenerationLimit: 3,
-    multiPet: false
+    multiPet: true
   },
   pro: {
     maxPets: 10,
@@ -17,7 +17,7 @@ export const PLAN_LIMITS: Record<PlanTier, EntitlementLimits> = {
   }
 }
 
-/** Mock redeem codes — replace with server validation in real auth. */
+/** Kept for compatibility with older local sessions while membership UI is disabled. */
 export const MOCK_REDEEM_CODES: Record<string, PlanTier> = {
   'PETORY-PRO-DEMO': 'pro',
   'PETORY-PRO-TEST': 'pro'

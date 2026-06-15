@@ -19,6 +19,5 @@ export {
   canCreatePet,
   canGeneratePet,
   canSendChat,
-  canUseStyle,
   buildAuthState
 } from './entitlementService'

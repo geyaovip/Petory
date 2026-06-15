@@ -38,7 +38,7 @@ export async function getChatQuotaView(user: User) {
     remainingToday: remaining,
     bonusQuota: quota.bonusQuota,
     totalUsed: quota.totalUsed,
-    isProUser: user.plan === 'pro'
+    isProUser: false
   }
 }
 
@@ -52,7 +52,7 @@ export async function canConsumeChat(
     return {
       ok: false,
       code: 'CHAT_QUOTA_EXCEEDED',
-      message: '今日免费对话次数已用完，明天再来或升级 Pro。'
+      message: '今日对话次数已用完，请明天再来。'
     }
   }
   return { ok: true }

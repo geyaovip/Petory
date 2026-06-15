@@ -3,7 +3,6 @@ import { createHash } from 'node:crypto'
 import { seedFromString } from '../../../src/shared/generation/reference.js'
 import type { PetPoseType, PetStyleType } from '../../../src/shared/types/pet.js'
 import { prisma } from '../lib/prisma.js'
-import { canUseStyle } from './entitlementService.js'
 import { assertDeviceAllowed } from './deviceGuardService.js'
 import { assertGenerationEnabled } from './systemConfigService.js'
 import { generateImage } from './seedreamService.js'
@@ -47,9 +46,6 @@ export async function createSinglePoseRegen(
   if (!ALLOWED_MIME.has(input.mimeType)) {
     return { success: false as const, code: 'UPLOAD_INVALID', message: '不支持的图片格式。' }
   }
-
-  const styleCheck = canUseStyle(user, input.styleType)
-  if (!styleCheck.ok) return styleCheck
 
   const job = await prisma.generationJob.create({
     data: {

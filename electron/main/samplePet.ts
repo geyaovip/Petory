@@ -3,7 +3,6 @@ import fs from 'fs'
 import path from 'path'
 import { getPoseFileName, PET_POSE_ORDER } from '../../src/shared/poses'
 import type { PetPoseAssets } from '../../src/shared/types/pet'
-import { canCreatePet } from './auth/entitlementService'
 import { createDraftPet, ensurePetDirs, loadStore, saveStore, updatePet } from './petStore'
 
 export type InstallSampleResult =
@@ -68,11 +67,6 @@ export function refreshInstalledSamplePets(): void {
 }
 
 export async function installSamplePet(): Promise<InstallSampleResult> {
-  const quota = canCreatePet()
-  if (!quota.ok) {
-    return { success: false, message: quota.message }
-  }
-
   const sampleRoot = getSampleRoot()
   const sampleIdle = path.join(sampleRoot, 'poses', 'idle.png')
   if (!fs.existsSync(sampleIdle)) {

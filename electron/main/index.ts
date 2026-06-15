@@ -8,17 +8,14 @@ import { ERROR_MESSAGES } from '../../src/shared/constants'
 import { IPC, type MenuAction, type UploadPayload, type WindowPosition } from '../../src/shared/ipc'
 import type { PetVisualState } from '../../src/shared/types/growth'
 import type { PomodoroStartInput } from '../../src/shared/types/pomodoro'
-import { getPosesForPlan } from '../../src/shared/poses'
-import type { FinalizePetInput, PetPersonality, PetPoseType, PetStyleType } from '../../src/shared/types/pet'
+import type { FinalizePetInput, PetPersonality, PetPoseType } from '../../src/shared/types/pet'
 import { broadcastPetsListChanged, listPetsNeedingPoseCompletion, resolvePoseImagePath } from './poseService'
 import { clearChatSession, handleSendChat } from './chat/handlers'
 import { clearChatHistory, getChatHistory, loadChatSettings, saveChatSettings } from './chatStore'
 import { runCompletePosesPipeline, runGenerationPipeline } from './image/pipeline'
 import { completeMissingPosesForAllPets, isPoseCompletionRunning } from './poseCompletionService'
 import { isPoseRegenerationRunning, regeneratePetPose } from './poseRegenerationService'
-import { getCurrentUser } from './auth/authStore'
 import { installSamplePet, refreshInstalledSamplePets } from './samplePet'
-import { getStyleCatalog } from './styleService'
 import { checkForUpdates, downloadUpdate, getUpdateState, initAutoUpdater, quitAndInstallUpdate } from './updateService'
 import { initCrashReporter, recordCrash } from './crashReporter'
 import { hasAcceptedLegal, saveLegalAcceptance } from './legalStore'
@@ -28,7 +25,6 @@ import {
   refreshAuthState,
   canActivatePet,
   canCreatePet,
-  canUseStyle,
   rejectLegacyOfflineSession,
   getAuthState,
   isAuthenticated,
@@ -36,7 +32,6 @@ import {
   requestMagicLink,
   consumeMagicLink,
   logout,
-  redeemCode,
   register
 } from './auth'
 import { applyUserSettings, persistAndApply } from './applySettings'
@@ -113,13 +108,11 @@ import {
   showPetWindowAfterCreation
 } from './windows'
 import type { LoginInput, RegisterInput } from '../../src/shared/types/auth'
-import type { PaymentPlanId } from '../../src/shared/types/payment'
 import type { OnboardingIntent } from '../../src/shared/types/onboarding'
 import type { ChatSettings } from '../../src/shared/types/chat'
 import type { UserSettings } from '../../src/shared/types/settings'
 import { broadcastSessionExpired } from './auth/sessionBroadcast'
 import { setAuthExpiredHandler } from './auth/sessionGuard'
-import { fetchPaymentPlans, purchaseProMock } from './payment/paymentService'
 
 config({ path: path.resolve(process.cwd(), '.env') })
 
@@ -372,7 +365,6 @@ function registerIpc(): void {
       name: pet.name,
       isPrimary: active?.id === petId,
       personality: pet.personality,
-      styleType: pet.styleType,
       poseCount
     }
   })
@@ -405,30 +397,8 @@ function registerIpc(): void {
     }
   })
 
-  ipcMain.handle(IPC.pet.generate, async (_event, petId: string, styleType?: PetStyleType) => {
-    if (styleType) {
-      const styleCheck = canUseStyle(styleType)
-      if (!styleCheck.ok) {
-        return {
-          success: false as const,
-          code: 'style_locked' as const,
-          message: styleCheck.message
-        }
-      }
-      updatePet(petId, { styleType })
-    } else {
-      const pet = getPetById(petId)
-      if (pet) {
-        const styleCheck = canUseStyle(pet.styleType)
-        if (!styleCheck.ok) {
-          return {
-            success: false as const,
-            code: 'style_locked' as const,
-            message: styleCheck.message
-          }
-        }
-      }
-    }
+  ipcMain.handle(IPC.pet.generate, async (_event, petId: string) => {
+    updatePet(petId, { styleType: 'petory' })
     const result = await runGenerationPipeline(petId)
     if (result.success) {
       const pet = getPetById(petId)
@@ -436,17 +406,6 @@ function registerIpc(): void {
       broadcastAuthStateChanged()
     }
     return result
-  })
-
-  ipcMain.handle(IPC.pet.getStyleCatalog, () => getStyleCatalog())
-
-  ipcMain.handle(IPC.pet.setStyle, (_event, petId: string, styleType: PetStyleType) => {
-    const styleCheck = canUseStyle(styleType)
-    if (!styleCheck.ok) {
-      return { success: false as const, message: styleCheck.message }
-    }
-    const pet = updatePet(petId, { styleType })
-    return { success: true as const, pet }
   })
 
   ipcMain.handle(IPC.pet.finalize, async (_event, input: FinalizePetInput) => {
@@ -555,10 +514,6 @@ function registerIpc(): void {
   ipcMain.handle(IPC.pet.regeneratePose, async (_event, petId: string, pose: PetPoseType) => {
     if (isPoseRegenerationRunning() || isPoseCompletionRunning()) {
       return { success: false as const, message: '正在生成姿势，请稍候。' }
-    }
-    const plan = getCurrentUser()?.plan ?? 'free'
-    if (!getPosesForPlan(plan).includes(pose)) {
-      return { success: false as const, message: '该姿势需要 Pro 权益。' }
     }
     return regeneratePetPose(petId, pose)
   })
@@ -721,52 +676,6 @@ function registerIpc(): void {
     broadcastAuthStateChanged()
     createAuthWindow()
     return result
-  })
-
-  ipcMain.handle(IPC.payment.getPlans, () => fetchPaymentPlans())
-
-  ipcMain.handle(IPC.payment.purchaseMock, async (_event, planId: PaymentPlanId) => {
-    const result = await purchaseProMock(planId)
-    if (!result.success) return result
-
-    broadcastAuthStateChanged()
-    const batch = await completeMissingPosesForAllPets()
-    const added = batch.completed.reduce((sum, item) => sum + item.addedCount, 0)
-
-    return {
-      success: true as const,
-      state: result.state,
-      poseCompletion:
-        added > 0
-          ? {
-              added,
-              pets: batch.completed.length,
-              failed: batch.failed.length
-            }
-          : undefined
-    }
-  })
-
-  ipcMain.handle(IPC.auth.redeemCode, async (_event, code: string) => {
-    const result = await redeemCode(code)
-    if (!result.success) return result
-
-    broadcastAuthStateChanged()
-    const batch = await completeMissingPosesForAllPets()
-    const added = batch.completed.reduce((sum, item) => sum + item.addedCount, 0)
-
-    return {
-      success: true as const,
-      state: getAuthState(),
-      poseCompletion:
-        added > 0
-          ? {
-              added,
-              pets: batch.completed.length,
-              failed: batch.failed.length
-            }
-          : undefined
-    }
   })
 
   ipcMain.handle(IPC.update.getState, () => getUpdateState())

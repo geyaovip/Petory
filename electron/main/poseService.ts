@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { BrowserWindow } from 'electron'
-import { getPoseFileName, getPosesForPlan, PET_POSE_LABELS } from '../../src/shared/poses'
+import { getPoseFileName, PET_POSE_LABELS, PET_POSE_ORDER } from '../../src/shared/poses'
 import type { PetVisualState } from '../../src/shared/types/growth'
 import type {
   GenerationPhase,
@@ -9,13 +9,11 @@ import type {
   Pet,
   PetPoseType
 } from '../../src/shared/types/pet'
-import { getCurrentUser } from './auth/authStore'
 import { IPC } from '../../src/shared/ipc'
 import { getPetDir, loadStore } from './petStore'
 
 export function getPosesToGenerate(): PetPoseType[] {
-  const plan = getCurrentUser()?.plan ?? 'free'
-  return getPosesForPlan(plan)
+  return PET_POSE_ORDER
 }
 
 export function getMissingPosesForPet(pet: Pet): PetPoseType[] {

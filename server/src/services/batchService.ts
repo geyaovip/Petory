@@ -8,10 +8,7 @@ import {
 import { PET_POSE_LABELS } from '../../../src/shared/poses.js'
 import type { PetPoseType, PetStyleType } from '../../../src/shared/types/pet.js'
 import { prisma } from '../lib/prisma.js'
-import {
-  canUseStyle,
-  validatePoses
-} from './entitlementService.js'
+import { validatePoses } from './entitlementService.js'
 import { generateImage } from './seedreamService.js'
 import { canConsumeGeneration, consumeGeneration } from './quotaService.js'
 import { assertGenerationEnabled } from './systemConfigService.js'
@@ -92,9 +89,6 @@ export async function runGenerationBatch(user: User, input: BatchInput) {
 
   const imageCheck = validateImage(input.mimeType)
   if (!imageCheck.ok) return imageCheck
-
-  const styleCheck = canUseStyle(user, input.styleType)
-  if (!styleCheck.ok) return styleCheck
 
   const poseCheck = validatePoses(user, input.poses)
   if (!poseCheck.ok) return poseCheck

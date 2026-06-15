@@ -44,7 +44,7 @@ export function GuideIllustration({ stepId }: GuideIllustrationProps): ReactElem
           <circle cx="120" cy="96" r="12" fill="#FFE8E4" />
         </svg>
       )
-    case 'styles':
+    case 'identity':
       return (
         <svg viewBox="0 0 240 112" className={common} aria-hidden>
           <rect x="28" y="28" width="48" height="48" rx="10" fill="#FFE8E4" />

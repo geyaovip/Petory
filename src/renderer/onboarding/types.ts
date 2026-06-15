@@ -1,7 +1,6 @@
 export type OnboardingStep =
   | 'welcome'
   | 'upload'
-  | 'style'
   | 'generating'
   | 'result'
   | 'naming'

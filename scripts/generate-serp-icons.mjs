@@ -1,8 +1,4 @@
-/**
- * Google Search favicons — WEBSITE ONLY (website/).
- * Does not touch build/dock-icon.png, src/renderer/public/, or brand/generated/.
- * Run: npm run sync:serp (after sync:brand when deploying the site).
- */
+/** Website/admin browser icons and opaque search/organization icons. */
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -11,6 +7,7 @@ import sharp from 'sharp'
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const websiteDir = path.join(root, 'website')
 const adminDir = path.join(root, 'server', 'admin', 'public')
+const browserIconDir = path.join(root, 'brand', 'generated')
 
 const sources = [
   path.join(root, 'brand/generated/icon.png'),
@@ -54,32 +51,26 @@ async function writeOpaqueIcon(size, dest, inset = 0.84) {
 
 fs.mkdirSync(websiteDir, { recursive: true })
 
-await writeOpaqueIcon(48, path.join(websiteDir, 'favicon-48.png'))
-await writeOpaqueIcon(48, path.join(websiteDir, 'favicon.ico'))
+// Browser tabs need transparent rounded corners. Do not place an already-blue
+// rounded tile on another opaque blue square.
+for (const size of [16, 32, 48]) {
+  await fs.promises.copyFile(
+    path.join(browserIconDir, `favicon-${size}.png`),
+    path.join(websiteDir, `favicon-${size}.png`)
+  )
+}
+await fs.promises.copyFile(path.join(websiteDir, 'favicon-32.png'), path.join(websiteDir, 'favicon.png'))
+await fs.promises.copyFile(path.join(websiteDir, 'favicon-48.png'), path.join(websiteDir, 'favicon.ico'))
+
+// Larger opaque assets are only for search/organization metadata.
 await writeOpaqueIcon(96, path.join(websiteDir, 'site-icon-96.png'))
 await writeOpaqueIcon(192, path.join(websiteDir, 'site-icon-192.png'))
-
-await sharp(path.join(websiteDir, 'favicon-48.png'))
-  .resize(32, 32)
-  .png()
-  .toFile(path.join(websiteDir, 'favicon-32.png'))
-
-await sharp(path.join(websiteDir, 'favicon-48.png'))
-  .resize(16, 16)
-  .png()
-  .toFile(path.join(websiteDir, 'favicon-16.png'))
-
-await sharp(path.join(websiteDir, 'favicon-48.png'))
-  .resize(32, 32)
-  .png()
-  .toFile(path.join(websiteDir, 'favicon.png'))
 
 fs.mkdirSync(adminDir, { recursive: true })
 for (const name of ['favicon-16.png', 'favicon-32.png', 'favicon-48.png', 'favicon.png']) {
   await fs.promises.copyFile(path.join(websiteDir, name), path.join(adminDir, name))
 }
 
-console.log('✓ website/favicon.ico (opaque 48px)')
+console.log('✓ website/favicon-* (transparent browser-tab set)')
 console.log('✓ website/site-icon-192.png (Organization logo)')
-console.log('✓ website/favicon-*.png (opaque SERP set)')
 console.log('✓ server/admin/public/favicon-*.png (matches website)')

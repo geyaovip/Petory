@@ -40,8 +40,6 @@ export const IPC = {
     confirmSedentary: 'petory:pet:confirmSedentary',
     recordActivity: 'petory:pet:recordActivity',
     installSample: 'petory:pet:installSample',
-    getStyleCatalog: 'petory:pet:getStyleCatalog',
-    setStyle: 'petory:pet:setStyle',
     getImage: 'petory:pet:getImage',
     getSummary: 'petory:pet:getSummary',
     consumeOnboardingIntent: 'petory:pet:consumeOnboardingIntent',
@@ -111,14 +109,9 @@ export const IPC = {
     login: 'petory:auth:login',
     register: 'petory:auth:register',
     logout: 'petory:auth:logout',
-    redeemCode: 'petory:auth:redeemCode',
     refresh: 'petory:auth:refresh',
     stateChanged: 'petory:auth:stateChanged',
     sessionExpired: 'petory:auth:sessionExpired'
-  },
-  payment: {
-    getPlans: 'petory:payment:getPlans',
-    purchaseMock: 'petory:payment:purchaseMock'
   },
   update: {
     getState: 'petory:update:getState',

@@ -8,7 +8,6 @@ import {
 } from '@phosphor-icons/react'
 import { useCallback, useEffect, useState, type CSSProperties, type ReactElement } from 'react'
 import { PERSONALITIES } from '@shared/constants'
-import { getPlanLabel } from '@shared/planLabels'
 import type { AuthState } from '@shared/types/auth'
 import type { Pet, PetPersonality, PoseCompletionStatus } from '@shared/types/pet'
 import type { SedentaryInterval, UserSettings } from '@shared/types/settings'
@@ -20,7 +19,6 @@ import { PreferenceGroup, PreferenceRow } from '../components/ui/PreferenceGroup
 import { Pill } from '../components/ui/Pill'
 import { StatusBanner, type StatusVariant } from '../components/ui/StatusBanner'
 import { Toggle } from '../components/ui/Toggle'
-import { ProUpgradeSection } from './ProUpgradeSection'
 import { PanelTitleBar } from '../components/ui/PanelTitleBar'
 
 type SettingsTab = 'account' | 'pet' | 'reminders' | 'privacy' | 'advanced'
@@ -35,7 +33,7 @@ const NAV_ITEMS = [
 ]
 
 const TAB_COPY: Record<SettingsTab, { title: string; subtitle: string }> = {
-  account: { title: '账号', subtitle: '管理登录状态、额度与 Petory Pro。' },
+  account: { title: '账号', subtitle: '管理登录状态与今日服务额度。' },
   pet: { title: '桌宠', subtitle: '自定义桌宠在桌面上的行为与外观。' },
   reminders: { title: '提醒', subtitle: '控制久坐与专注结束时的通知。' },
   privacy: { title: '隐私与数据', subtitle: '管理本地数据、聊天记录和隐私选项。' },
@@ -77,7 +75,6 @@ export function SettingsPanel(): ReactElement {
   const [activePet, setActivePet] = useState<Pet | null>(null)
   const [activePersonality, setActivePersonality] = useState<PetPersonality | null>(null)
   const [authState, setAuthState] = useState<AuthState | null>(null)
-  const [redeemCode, setRedeemCode] = useState('')
   const [apiBaseUrlDraft, setApiBaseUrlDraft] = useState('')
   const [updateState, setUpdateState] = useState<UpdateState | null>(null)
   const [poseStatus, setPoseStatus] = useState<PoseCompletionStatus | null>(null)
@@ -188,10 +185,10 @@ export function SettingsPanel(): ReactElement {
               <PreferenceGroup title="登录账号">
                 <PreferenceRow
                   title={authState?.session?.user.displayName ?? '未登录'}
-                  description={authState?.session?.user.email ?? '登录后可同步额度与会员状态'}
+                  description={authState?.session?.user.email ?? '登录后可使用云端生成与对话服务'}
                 >
-                  <span className="rounded-full bg-petory-primary-soft px-2.5 py-1 text-[11px] font-medium text-petory-primary">
-                    {getPlanLabel(authState?.session?.user.plan ?? 'free')}
+                  <span className="text-[12px] text-petory-text-tertiary">
+                    {authState?.session ? '已登录' : '未登录'}
                   </span>
                 </PreferenceRow>
                 <PreferenceRow
@@ -200,30 +197,7 @@ export function SettingsPanel(): ReactElement {
                 >
                   <span className="text-[12px] text-petory-text-tertiary">云端同步</span>
                 </PreferenceRow>
-                <PreferenceRow title="兑换码" description="输入兑换码开通权益或增加额度。">
-                  <div className="flex w-[300px] gap-2">
-                    <Input value={redeemCode} placeholder="输入兑换码" onChange={(event) => setRedeemCode(event.target.value)} />
-                    <Button
-                      size="sm"
-                      disabled={!redeemCode.trim()}
-                      onClick={() =>
-                        void window.petory.auth.redeemCode(redeemCode).then(async (result) => {
-                          if (!result.success) return showStatus(result.message, 'error')
-                          setRedeemCode('')
-                          setAuthState(result.state)
-                          showStatus('兑换成功')
-                          await load()
-                        })
-                      }
-                    >
-                      兑换
-                    </Button>
-                  </div>
-                </PreferenceRow>
               </PreferenceGroup>
-              {authState?.session ? (
-                <ProUpgradeSection authState={authState} onStatus={showStatus} onAuthUpdated={setAuthState} onReload={load} />
-              ) : null}
             </div>
           ) : null}
 
@@ -261,7 +235,7 @@ export function SettingsPanel(): ReactElement {
                     <span className="w-10 text-right text-[12px] font-medium text-petory-text-secondary">{Math.round(settings.petOpacity * 100)}%</span>
                   </div>
                 </PreferenceRow>
-                <Toggle checked={settings.enableSound} onChange={(value) => void save({ enableSound: value })} label="桌宠音效" description="播放点击、提醒与升级音效。" />
+                <Toggle checked={settings.enableSound} onChange={(value) => void save({ enableSound: value })} label="桌宠音效" description="播放点击、提醒与成长升级音效。" />
               </PreferenceGroup>
               {activePersonality ? (
                 <PreferenceGroup title="性格" description="影响聊天语气，不会改变宠物外观。">
@@ -365,7 +339,7 @@ export function SettingsPanel(): ReactElement {
                 {updateState?.status === 'ready' ? <PreferenceRow title="更新已准备好"><Button size="sm" onClick={() => window.petory.update.install()}>安装并重启</Button></PreferenceRow> : null}
                 <PreferenceRow title="新手引导"><Button size="sm" variant="secondary" onClick={() => window.petory.guide.open()}>重新查看</Button></PreferenceRow>
                 <PreferenceRow title="Petory 官网"><Button size="sm" variant="secondary" onClick={() => window.petory.app.openWebsite()}>打开官网</Button></PreferenceRow>
-                {poseStatus?.pending.length ? <PreferenceRow title="补全 Pro 姿势" description={`${poseStatus.pending.length} 只宠物需要补全`}><Button size="sm" variant="secondary" onClick={() => void window.petory.pet.completePoses().then(() => void load())}>开始补全</Button></PreferenceRow> : null}
+                {poseStatus?.pending.length ? <PreferenceRow title="补全桌宠姿势" description={`${poseStatus.pending.length} 只宠物尚未生成完整六姿势`}><Button size="sm" variant="secondary" onClick={() => void window.petory.pet.completePoses().then(() => void load())}>开始补全</Button></PreferenceRow> : null}
                 <PreferenceRow title="退出 Petory"><Button size="sm" variant="secondary" onClick={() => window.petory.app.quit()}>退出应用</Button></PreferenceRow>
               </PreferenceGroup>
             </div>

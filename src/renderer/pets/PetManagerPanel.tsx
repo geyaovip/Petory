@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState, type ReactElement } from 're
 import { PETS_COPY } from '@shared/copy/pets'
 import { PERSONALITIES } from '@shared/constants'
 import { PET_POSE_LABELS, PET_POSE_ORDER } from '@shared/poses'
-import { getStyleDefinition } from '@shared/styles'
 import type { DesktopPetStatus, Pet, PetPersonality } from '@shared/types/pet'
 import { Check, PencilSimple, X } from '@phosphor-icons/react'
 import { Button } from '../components/ui/Button'
@@ -268,7 +267,7 @@ export function PetManagerPanel(): ReactElement {
                     {selectedPet.onDesktop ? <Pill>桌面中</Pill> : null}
                   </div>
                   <p className="mt-2 text-[13px] text-petory-text-secondary">
-                    Lv.{selectedPet.level} · {getStyleDefinition(selectedPet.styleType).labelZh}
+                    Lv.{selectedPet.level} · 原图一致
                     {selectedPet.isSample ? ' · 示例宠物' : ''}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -324,7 +323,7 @@ export function PetManagerPanel(): ReactElement {
               {!selectedPet.isSample && selectedPet.imageOriginalPath ? (
                 <section className="mt-7 border-t border-petory-border pt-6">
                   <h3 className="text-[13px] font-semibold">重新生成</h3>
-                  <p className="mt-1 text-[12px] text-petory-text-tertiary">保留这只宠物，重新选择照片与生成结果。</p>
+                  <p className="mt-1 text-[12px] text-petory-text-tertiary">基于原照片重新生成完整六种姿势，不改变主体风格。</p>
                   <Button
                     className="mt-3"
                     size="sm"

@@ -1,31 +1,20 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import type { OnboardingIntent } from '@shared/types/onboarding'
-import type { PetStyleType } from '@shared/types/pet'
 import { ErrorPage } from './ErrorPage'
 import { GeneratingPage } from './GeneratingPage'
 import { NamingPage } from './NamingPage'
 import { ResultPage } from './ResultPage'
-import { StyleSelectPage } from './StyleSelectPage'
 import { UploadPage } from './UploadPage'
 import { WelcomePage } from './WelcomePage'
 import type { OnboardingErrorCode, OnboardingStep } from './types'
 
 type FlowStep = OnboardingStep | 'loading'
 
-function resolveDefaultStyle(
-  lastSelectedStyle: PetStyleType,
-  activeStyle?: PetStyleType
-): PetStyleType {
-  return lastSelectedStyle ?? activeStyle ?? 'petory'
-}
-
 export function OnboardingFlow(): ReactElement {
   const [step, setStep] = useState<FlowStep>('loading')
   const [replaceMode, setReplaceMode] = useState(false)
   const [returnToPets, setReturnToPets] = useState(false)
   const [petId, setPetId] = useState<string | null>(null)
-  const [selectedStyle, setSelectedStyle] = useState<PetStyleType>('petory')
-  const [lastUsedStyle, setLastUsedStyle] = useState<PetStyleType>('petory')
   const [isSamplePet, setIsSamplePet] = useState(false)
   const [errorCode, setErrorCode] =
     useState<OnboardingErrorCode>('generation_failed')
@@ -34,21 +23,13 @@ export function OnboardingFlow(): ReactElement {
 
   const applyIntent = useCallback(
     async (intent: OnboardingIntent | null): Promise<void> => {
-      const [hasActive, activePet, settings] = await Promise.all([
-        window.petory.pet.hasActive(),
-        window.petory.pet.getActive(),
-        window.petory.settings.get()
-      ])
-
-      const rememberedStyle = settings.lastSelectedStyle
-      setLastUsedStyle(rememberedStyle)
+      const hasActive = await window.petory.pet.hasActive()
       setReturnToPets(intent?.returnTo === 'pets')
 
       if (intent?.mode === 'restyle') {
         const pets = await window.petory.pets.list()
         const pet = pets.find((item) => item.id === intent.petId)
         if (!pet || pet.isSample) {
-          setSelectedStyle(rememberedStyle)
           setReplaceMode(hasActive)
           setStep(hasActive ? 'upload' : 'welcome')
           return
@@ -57,8 +38,7 @@ export function OnboardingFlow(): ReactElement {
         setReplaceMode(true)
         setPetId(pet.id)
         setIsSamplePet(false)
-        setSelectedStyle(pet.styleType ?? rememberedStyle)
-        setStep(pet.imagePetPath ? 'result' : 'style')
+        setStep(pet.imagePetPath ? 'result' : 'upload')
         return
       }
 
@@ -66,7 +46,6 @@ export function OnboardingFlow(): ReactElement {
         setReplaceMode(false)
         setPetId(null)
         setIsSamplePet(false)
-        setSelectedStyle(rememberedStyle)
         setStep('upload')
         return
       }
@@ -75,15 +54,11 @@ export function OnboardingFlow(): ReactElement {
         setReplaceMode(true)
         setPetId(null)
         setIsSamplePet(false)
-        setSelectedStyle(
-          resolveDefaultStyle(rememberedStyle, activePet?.styleType)
-        )
         setStep('upload')
         return
       }
 
       setReplaceMode(false)
-      setSelectedStyle(rememberedStyle)
       setStep('welcome')
     },
     []
@@ -103,11 +78,10 @@ export function OnboardingFlow(): ReactElement {
     })
   }, [applyIntent])
 
-  const runGeneration = useCallback(async (id: string, style: PetStyleType) => {
+  const runGeneration = useCallback(async (id: string) => {
     setIsSamplePet(false)
-    setSelectedStyle(style)
     setStep('generating')
-    const result = await window.petory.pet.generate(id, style)
+    const result = await window.petory.pet.generate(id)
     if (!result.success) {
       setPetId(id)
       setErrorCode(result.code)
@@ -115,7 +89,6 @@ export function OnboardingFlow(): ReactElement {
       setStep('error')
       return
     }
-    setLastUsedStyle(style)
     setPetId(id)
     setStep('result')
   }, [])
@@ -133,7 +106,6 @@ export function OnboardingFlow(): ReactElement {
       }
       setPetId(result.petId)
       setIsSamplePet(true)
-      setSelectedStyle('petory')
       setStep('naming')
     } finally {
       setInstallingSample(false)
@@ -163,12 +135,8 @@ export function OnboardingFlow(): ReactElement {
       <UploadPage
         replaceMode={replaceMode}
         onUploaded={(id) => {
-          void window.petory.settings.get().then((settings) => {
-            setPetId(id)
-            setSelectedStyle(settings.lastSelectedStyle)
-            setLastUsedStyle(settings.lastSelectedStyle)
-            setStep('style')
-          })
+          setPetId(id)
+          void runGeneration(id)
         }}
         onError={(message) => {
           setErrorCode('upload_invalid')
@@ -179,30 +147,16 @@ export function OnboardingFlow(): ReactElement {
     )
   }
 
-  if (step === 'style' && petId) {
-    return (
-      <StyleSelectPage
-        initialStyle={selectedStyle}
-        lastUsedStyle={lastUsedStyle}
-        replaceMode={replaceMode}
-        onBack={() => setStep('upload')}
-        onContinue={(style) => void runGeneration(petId, style)}
-      />
-    )
-  }
-
   if (step === 'generating') {
-    return <GeneratingPage styleType={isSamplePet ? 'petory' : selectedStyle} />
+    return <GeneratingPage />
   }
 
   if (step === 'result' && petId) {
     return (
       <ResultPage
         petId={petId}
-        initialStyle={selectedStyle}
-        lastUsedStyle={lastUsedStyle}
         onUse={() => setStep('naming')}
-        onRegenerate={(style) => void runGeneration(petId, style)}
+        onRegenerate={() => void runGeneration(petId)}
         onUploadAnother={() => {
           setPetId(null)
           setIsSamplePet(false)
@@ -217,7 +171,6 @@ export function OnboardingFlow(): ReactElement {
       <NamingPage
         petId={petId}
         isSample={isSamplePet}
-        styleType={selectedStyle}
         onSubmit={returnToPrevious}
       />
     )
@@ -230,13 +183,7 @@ export function OnboardingFlow(): ReactElement {
         message={errorMessage}
         onTryAgain={
           petId
-            ? () => {
-                if (errorCode === 'style_locked') {
-                  setStep('style')
-                  return
-                }
-                void runGeneration(petId, selectedStyle)
-              }
+            ? () => void runGeneration(petId)
             : undefined
         }
         onUploadAnother={() => {

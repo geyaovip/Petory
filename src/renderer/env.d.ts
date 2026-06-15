@@ -2,7 +2,6 @@ import type { MenuAction, PetDisplaySettings, UploadPayload, WindowPosition } fr
 import type {
   AuthActionResult,
   AuthState,
-  PoseCompletionSummary,
   LoginInput,
   MagicLinkRequestResult,
   RegisterInput
@@ -26,13 +25,10 @@ import type {
   PetIpcResult,
   PetPersonality,
   PetPoseType,
-  PetStyleType,
   RegeneratePoseResult
 } from '@shared/types/pet'
 import type { OnboardingIntent } from '@shared/types/onboarding'
-import type { StyleCatalogItem } from '@shared/types/styles'
 import type { UpdateState } from '@shared/types/update'
-import type { PaymentPlan, PaymentPlanId } from '@shared/types/payment'
 
 export interface PetoryAPI {
   platform: NodeJS.Platform
@@ -68,19 +64,13 @@ export interface PetoryAPI {
     upload: (
       payload: UploadPayload
     ) => Promise<{ success: true; petId: string } | { success: false; code: string; message: string }>
-    generate: (petId: string, styleType?: PetStyleType) => Promise<PetIpcResult>
-    getStyleCatalog: () => Promise<StyleCatalogItem[]>
-    setStyle: (
-      petId: string,
-      styleType: PetStyleType
-    ) => Promise<{ success: true; pet: Pet } | { success: false; message: string }>
+    generate: (petId: string) => Promise<PetIpcResult>
     getPreviewImage: (petId: string) => Promise<string | null>
     getImage: (petId: string, pose?: PetVisualState) => Promise<string | null>
     getSummary: (petId: string) => Promise<{
       name: string
       isPrimary: boolean
       personality: PetPersonality
-      styleType: PetStyleType
       poseCount: number
     } | null>
     finalize: (input: FinalizePetInput) => Promise<Pet>
@@ -167,21 +157,9 @@ export interface PetoryAPI {
     login: (input: LoginInput) => Promise<AuthActionResult>
     register: (input: RegisterInput) => Promise<AuthActionResult>
     logout: () => Promise<AuthActionResult>
-    redeemCode: (code: string) => Promise<AuthActionResult>
     refresh: () => Promise<AuthState>
     onStateChanged: (callback: (state: AuthState) => void) => () => void
     onSessionExpired: (callback: (payload: { message: string }) => void) => () => void
-  }
-  payment: {
-    getPlans: () => Promise<PaymentPlan[]>
-    purchaseMock: (planId: PaymentPlanId) => Promise<
-      | {
-          success: true
-          state: AuthState
-          poseCompletion?: PoseCompletionSummary
-        }
-      | { success: false; message: string }
-    >
   }
   update: {
     getState: () => Promise<UpdateState>
