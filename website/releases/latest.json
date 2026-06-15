@@ -4,12 +4,12 @@
   "mac": {
     "fileName": "Petory-2.4.6-universal.dmg",
     "url": "https://github.com/geyaovip/petory/releases/download/v2.4.6/Petory-2.4.6-universal.dmg",
-    "sizeLabel": "~183 MB"
+    "sizeLabel": "~187 MB"
   },
   "win": {
     "fileName": "Petory-Setup-2.4.6.exe",
     "url": "https://github.com/geyaovip/petory/releases/download/v2.4.6/Petory-Setup-2.4.6.exe",
-    "sizeLabel": "~86 MB"
+    "sizeLabel": "~90 MB"
   },
   "updateFeed": "https://petory.chat/releases",
   "changelog": [

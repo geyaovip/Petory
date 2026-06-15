@@ -1,8 +1,8 @@
-version: 2.4.5
+version: 2.4.6
 files:
-  - url: https://github.com/geyaovip/petory/releases/download/v2.4.5/Petory-Setup-2.4.5.exe
-    sha512: cVgkda19VmzZ2/fJubtBVsiS+yM72VzFjgGNZ0micxRsjO2vXB2eOR3vLesP1ZDcVXrW8vYdAAcThmJSHsKHfg==
-    size: 90113345
-path: https://github.com/geyaovip/petory/releases/download/v2.4.5/Petory-Setup-2.4.5.exe
-sha512: cVgkda19VmzZ2/fJubtBVsiS+yM72VzFjgGNZ0micxRsjO2vXB2eOR3vLesP1ZDcVXrW8vYdAAcThmJSHsKHfg==
-releaseDate: '2026-06-12T03:59:52.331Z'
+  - url: https://github.com/geyaovip/petory/releases/download/v2.4.6/Petory-Setup-2.4.6.exe
+    sha512: NeCmmTmR6RGqwaxCjOqea+aHAAI8vo6V4wope+Kg+VNyO09Xjx2lUa1LAnmsH0aF9JRljIoVMtR07MUm0yNdoA==
+    size: 94183991
+path: https://github.com/geyaovip/petory/releases/download/v2.4.6/Petory-Setup-2.4.6.exe
+sha512: NeCmmTmR6RGqwaxCjOqea+aHAAI8vo6V4wope+Kg+VNyO09Xjx2lUa1LAnmsH0aF9JRljIoVMtR07MUm0yNdoA==
+releaseDate: '2026-06-15T07:15:05.386Z'
