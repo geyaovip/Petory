@@ -66,17 +66,30 @@ Verify image API is configured (`imageApi: true`):
 curl -s https://api.petory.chat/health
 ```
 
-### Sync secrets from local dev machine
+### Deploy from local (recommended)
 
-On your Mac (after `server/.env` has `ARK_API_KEY`):
+On your Mac (SSH access to VPS, `server/.env` filled):
 
 ```bash
-npm run deploy:env
-# copies ARK / Resend / Kimi keys into deploy/server/.env (gitignored)
+npm run deploy:server
+```
 
-scp deploy/server/.env ubuntu@YOUR_VPS:/home/ubuntu/apps/petory/current/deploy/server/.env
-ssh ubuntu@YOUR_VPS 'cd /home/ubuntu/apps/petory/current && git pull --ff-only && docker compose -f deploy/server/compose.yaml up -d --build'
-curl -s https://api.petory.chat/health
+This merges ARK / mail / chat keys into `deploy/server/.env`, uploads it, `git pull`, rebuilds API, runs `prisma db push`, and checks `/health` (`imageApi: true`).
+
+Options:
+
+```bash
+npm run deploy:server -- --env-only    # sync secrets only
+npm run deploy:server -- --skip-env    # code rebuild without touching .env
+```
+
+Override host: `PETORY_DEPLOY_HOST=ubuntu@YOUR_HOST npm run deploy:server`
+
+Mirror installers to `https://api.petory.chat/downloads/`:
+
+```bash
+npm run deploy:downloads               # from local release/
+npm run deploy:downloads -- --from-github
 ```
 
 Never commit `deploy/server/.env`.

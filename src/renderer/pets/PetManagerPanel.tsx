@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react'
 import { PETS_COPY } from '@shared/copy/pets'
 import { PERSONALITIES } from '@shared/constants'
-import { PET_POSE_LABELS, PET_POSE_ORDER } from '@shared/poses'
 import type { DesktopPetStatus, Pet, PetPersonality } from '@shared/types/pet'
 import { Check, PencilSimple, X } from '@phosphor-icons/react'
 import { Button } from '../components/ui/Button'
@@ -124,7 +123,7 @@ export function PetManagerPanel(): ReactElement {
           subtitle={
             desktopStatus
               ? `桌面显示 ${desktopStatus.visibleCount}/${desktopStatus.maxDesktopPets} · 主宠负责聊天与成长`
-              : '选择一只宠物后再管理它的状态与姿势'
+              : '选择一只宠物后再管理它的状态'
           }
           onClose={() => window.petory.pets.close()}
         />
@@ -267,7 +266,7 @@ export function PetManagerPanel(): ReactElement {
                     {selectedPet.onDesktop ? <Pill>桌面中</Pill> : null}
                   </div>
                   <p className="mt-2 text-[13px] text-petory-text-secondary">
-                    Lv.{selectedPet.level} · 原图一致
+                    Lv.{selectedPet.level}
                     {selectedPet.isSample ? ' · 示例宠物' : ''}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -296,27 +295,6 @@ export function PetManagerPanel(): ReactElement {
                       {item}
                     </Pill>
                   ))}
-                </div>
-              </section>
-
-              <section className="mt-7 border-t border-petory-border pt-6">
-                <div>
-                  <h3 className="text-[13px] font-semibold">姿势</h3>
-                  <p className="mt-1 text-[12px] text-petory-text-tertiary">
-                    创建时由系统生成，完成后仅用于状态切换。
-                  </p>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {PET_POSE_ORDER.filter((pose) => Boolean(selectedPet.posePaths?.[pose])).map((pose) => {
-                    return (
-                      <span
-                        key={pose}
-                        className="rounded-lg border border-petory-border bg-petory-muted px-3 py-1.5 text-[12px] font-medium text-petory-text-secondary"
-                      >
-                        {PET_POSE_LABELS[pose]}
-                      </span>
-                    )
-                  })}
                 </div>
               </section>
 

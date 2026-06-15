@@ -124,7 +124,4 @@ if (!ark) {
   console.log(`✓ ARK_API_KEY present (${ark.length} chars)`)
 }
 
-console.log('\nNext on VPS (only updates ARK/mail/chat — keeps POSTGRES_PASSWORD & JWT_SECRET):')
-console.log('  scp deploy/server/.env ubuntu@YOUR_HOST:/home/ubuntu/apps/petory/current/deploy/server/.env')
-console.log('  ssh ubuntu@YOUR_HOST "cd /home/ubuntu/apps/petory/current && docker compose -f deploy/server/compose.yaml up -d --build api"')
-console.log('  curl -s https://api.petory.chat/health   # expect imageApi:true')
+console.log('\nNext: npm run deploy:server')
