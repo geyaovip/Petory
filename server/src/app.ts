@@ -7,10 +7,8 @@ import { authRoutes } from './routes/auth.js'
 import { userRoutes } from './routes/user.js'
 import { generationRoutes } from './routes/generation.js'
 import { adminRoutes } from './routes/admin.js'
-import { redeemRoutes } from './routes/redeem.js'
 import { chatRoutes } from './routes/chat.js'
 import { appRoutes } from './routes/app.js'
-import { paymentRoutes } from './routes/payment.js'
 import { consumeAdminMagicLink, requestAdminMagicLink } from './services/authService.js'
 import { ensureUploadsDir } from './services/storageService.js'
 
@@ -93,8 +91,6 @@ export function createApp() {
   app.route('/api/admin', adminRoutes)
 
   app.route('/api/generation', generationRoutes)
-  app.route('/api/redeem', redeemRoutes)
-  app.route('/api/payment', paymentRoutes)
   app.route('/api/chat', chatRoutes)
   app.route('/api', userRoutes)
 

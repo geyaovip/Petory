@@ -15,12 +15,10 @@ export async function getEnhancedDashboard() {
 
   const [
     totalUsers,
-    proUsers,
     todayJobs,
     todaySuccess,
     todayFailed,
     todayBatches,
-    activeCodes,
     todayChats,
     todayChatSuccess,
     todayChatFailed,
@@ -28,12 +26,10 @@ export async function getEnhancedDashboard() {
     todayNewUsers
   ] = await Promise.all([
     prisma.user.count({ where: { status: 'active' } }),
-    prisma.user.count({ where: { plan: 'pro', status: 'active' } }),
     prisma.generationJob.count({ where: { createdAt: { gte: startOfDay } } }),
     prisma.generationJob.count({ where: { createdAt: { gte: startOfDay }, status: 'succeeded' } }),
     prisma.generationJob.count({ where: { createdAt: { gte: startOfDay }, status: 'failed' } }),
     prisma.generationBatch.count({ where: { createdAt: { gte: startOfDay } } }),
-    prisma.redeemCode.count({ where: { active: true } }),
     prisma.chatLog.count({ where: { createdAt: { gte: startOfDay } } }),
     prisma.chatLog.count({ where: { createdAt: { gte: startOfDay }, status: 'succeeded' } }),
     prisma.chatLog.count({ where: { createdAt: { gte: startOfDay }, status: 'failed' } }),
@@ -82,13 +78,11 @@ export async function getEnhancedDashboard() {
 
   return {
     totalUsers,
-    proUsers,
     todayJobs,
     todayBatches,
     todaySuccess,
     todayFailed,
     successRate,
-    activeRedeemCodes: activeCodes,
     todayChats,
     todayChatSuccess,
     todayChatFailed,

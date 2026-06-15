@@ -1,6 +1,6 @@
 # Petory Server (B1.3)
 
-管理端 API + 运营后台。假登录 + 多姿势 batch + 兑换码 + Kimi 对话代理 + **系统配置与运营工具**。
+Petory API 与运营后台：Magic Link 登录、六姿势生成、Kimi 对话代理、统一额度、系统配置与运营工具。
 
 ## 快速开始
 
@@ -36,7 +36,7 @@ npm run dev
 - API：`http://localhost:8787`
 - 健康检查：`GET /health`
 - 管理后台：`http://localhost:8787/admin/`
-- 管理员：`geyaovip@163.com`，通过一次性邮箱链接登录
+- 管理员：由生产环境变量 `ADMIN_EMAIL` 配置，通过一次性邮箱链接登录
 - 只读运营：由 `OPERATOR_EMAIL` 配置，同样通过一次性邮箱链接登录
 
 停止数据库：`npm run db:down`（在 `server/` 目录）
@@ -54,7 +54,6 @@ npm run dev
 | POST | `/api/generation/complete-poses` | 姿势补全（不扣额度） |
 | POST | `/api/generation/regenerate-pose` | 单姿势重生成（不扣额度） |
 | GET | `/api/generation/batch/:id` | 查询批次 |
-| POST | `/api/redeem` | 兑换码 `{ code }` |
 | GET | `/api/chat/quota` | 对话额度 |
 | POST | `/api/chat/send` | Kimi 对话代理 |
 | GET | `/api/app/status` | 公开：维护公告、服务开关、额度上限 |
@@ -73,7 +72,6 @@ npm run dev
 | GET | `/api/admin/login-logs` | 用户登录日志 |
 | GET | `/api/admin/users` | 用户列表 |
 | POST | `/api/admin/users/:id/quota/grant` | 加额度 |
-| POST | `/api/admin/users/:id/pro/activate` | 开通 Pro |
 
 完整列表见 [docs/backend/PRD.md](../docs/backend/PRD.md)。
 
@@ -99,7 +97,7 @@ DATABASE_URL="postgresql://user:pass@host:5432/petory?schema=public&sslmode=requ
 
 1. 更新 `server/.env` 中的 `DATABASE_URL`
 2. `npm run db:up && npm run db:push`
-3. 重启服务（种子管理员与兑换码会重新写入）
+3. 重启服务（管理员和系统配置会按环境变量同步）
 
 ## 与客户端对接
 

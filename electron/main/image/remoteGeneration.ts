@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import sharp from 'sharp'
 import type { ReferenceMode } from '../../../src/shared/generation/reference'
 import type { PetPoseType, PetStyleType } from '../../../src/shared/types/pet'
 import type { ServerBatchResponse, ServerJobResponse } from '../../../src/shared/types/api'
@@ -98,17 +99,34 @@ export async function logLocalGenerationBatch(input: {
   styleType: PetStyleType
   poses: PetPoseType[]
   clientPetId: string
+  posePaths: Partial<Record<PetPoseType, string>>
 }): Promise<void> {
   try {
+    const form = new FormData()
+    form.append('deviceId', getLocalDeviceId())
+    form.append('styleType', input.styleType)
+    form.append('poses', JSON.stringify(input.poses))
+    form.append('clientPetId', input.clientPetId)
+    for (const pose of input.poses) {
+      const posePath = input.posePaths[pose]
+      if (!posePath || !fs.existsSync(posePath)) continue
+      const preview = await sharp(posePath)
+        .resize({ width: 360, height: 360, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 78, alphaQuality: 85 })
+        .toBuffer()
+      const arrayBuffer = preview.buffer.slice(
+        preview.byteOffset,
+        preview.byteOffset + preview.byteLength
+      ) as ArrayBuffer
+      form.append(
+        `preview_${pose}`,
+        new Blob([arrayBuffer], { type: 'image/webp' }),
+        `${pose}.webp`
+      )
+    }
     await apiFetch('/api/generation/log-local-batch', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deviceId: getLocalDeviceId(),
-        styleType: input.styleType,
-        poses: input.poses,
-        clientPetId: input.clientPetId
-      })
+      body: form
     })
   } catch (error) {
     console.warn('[petory] failed to log local generation batch for admin:', error)

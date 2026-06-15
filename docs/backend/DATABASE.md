@@ -41,7 +41,7 @@ DATABASE_URL="postgresql://user:pass@host:5432/petory?schema=public&sslmode=requ
 - `User`、`Device`、`GenerationBatch`、`GenerationJob`
 - `GenerationQuota`、`ChatQuota`、`QuotaLog`、`ChatLog`
 - `RedeemCode`、`RedeemLog`
-- `PaymentOrder`（C2.5 模拟支付）
+- `PaymentOrder`（历史兼容表，当前支付功能停用）
 - `SystemConfig`、`AdminUser`、`AdminAuditLog`、`UserLoginLog`
 
 ## 运维命令
@@ -61,6 +61,6 @@ DATABASE_URL="postgresql://user:pass@host:5432/petory?schema=public&sslmode=requ
 
 1. 备份旧 `dev.db`（如需查阅）
 2. 按上文配置 PostgreSQL 并 `db:push`
-3. 重启 API — 管理员账号、兑换码、系统配置会由 `seed.ts` 重新种子化
+3. 重启 API — 管理员账号与系统配置会由 `seed.ts` 按环境变量同步
 
 **用户与任务数据不会自动导入**，需重新注册或手动迁移。

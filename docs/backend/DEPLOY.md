@@ -24,7 +24,7 @@ MINIMAX_API_KEY=...
 KIMI_API_KEY=...
 
 # 管理员邮箱白名单（首次启动）
-ADMIN_EMAIL=geyaovip@163.com
+ADMIN_EMAIL=<管理员邮箱>
 OPERATOR_EMAIL=operator@petory.app
 RESEND_API_KEY=<Resend API Key>
 MAIL_FROM=Petory <noreply@petory.chat>
@@ -42,7 +42,7 @@ npm run build
 npm start
 ```
 
-首次启动会种子化：管理员、运营账号、系统配置、演示兑换码。
+首次启动会同步管理员、运营账号和系统配置。会员、支付与兑换能力当前停用。
 
 ## 客户端配置
 

@@ -61,31 +61,49 @@ generationRoutes.post('/consume', async (c) => {
 /** Client-side MiniMax: log a succeeded batch after local generation (admin visibility). */
 generationRoutes.post('/log-local-batch', async (c) => {
   const user = c.get('user')!
-  const body = await c.req
-    .json<{
-      deviceId?: string
-      styleType?: string
-      poses?: PetPoseType[]
-      clientPetId?: string
-    }>()
-    .catch(() => ({}))
+  const isJson = c.req.header('content-type')?.includes('application/json')
+  const body: Record<string, unknown> = isJson
+    ? await c.req.json<Record<string, unknown>>().catch(() => ({}))
+    : (await c.req.parseBody()) as Record<string, unknown>
+  const deviceId = typeof body.deviceId === 'string' ? body.deviceId : undefined
 
-  const deviceCheck = await assertDeviceAllowed(user.id, body.deviceId)
+  const deviceCheck = await assertDeviceAllowed(user.id, deviceId)
   if (!deviceCheck.ok) {
     return c.json({ success: false, code: deviceCheck.code, message: deviceCheck.message }, 403)
   }
 
   const styleType: PetStyleType = 'petory'
 
-  const poses = Array.isArray(body.poses)
-    ? body.poses.filter((pose): pose is PetPoseType => POSES.has(pose))
+  let parsedPoses: unknown = []
+  if (Array.isArray(body.poses)) {
+    parsedPoses = body.poses
+  } else if (typeof body.poses === 'string') {
+    try {
+      parsedPoses = JSON.parse(body.poses)
+    } catch {
+      parsedPoses = []
+    }
+  }
+  const poses = Array.isArray(parsedPoses)
+    ? parsedPoses.filter(
+        (pose): pose is PetPoseType => typeof pose === 'string' && POSES.has(pose)
+      )
     : defaultPosesForUser(user)
+  const previews: Partial<Record<PetPoseType, Buffer>> = {}
+  for (const pose of poses) {
+    const preview = body[`preview_${pose}`]
+    if (!(preview instanceof File) || preview.type !== 'image/webp' || preview.size > 1024 * 1024) {
+      continue
+    }
+    previews[pose] = Buffer.from(await preview.arrayBuffer())
+  }
 
   await logClientLocalBatch(user, {
-    deviceId: body.deviceId,
+    deviceId,
     styleType,
     poses,
-    clientPetId: body.clientPetId
+    clientPetId: typeof body.clientPetId === 'string' ? body.clientPetId : undefined,
+    previews
   })
 
   return c.json({ success: true })

@@ -6,7 +6,12 @@ import { prisma } from '../lib/prisma.js'
 import { assertDeviceAllowed } from './deviceGuardService.js'
 import { assertGenerationEnabled } from './systemConfigService.js'
 import { generateImage } from './seedreamService.js'
-import { saveInputImage, saveOutputImage, toPublicUrl } from './storageService.js'
+import {
+  saveClientPosePreview,
+  saveInputImage,
+  saveOutputImage,
+  toPublicUrl
+} from './storageService.js'
 
 const ALLOWED_MIME = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp'])
 
@@ -104,6 +109,7 @@ export async function logClientLocalBatch(
     styleType: PetStyleType
     poses: PetPoseType[]
     clientPetId?: string
+    previews?: Partial<Record<PetPoseType, Buffer>>
   }
 ) {
   const batch = await prisma.generationBatch.create({
@@ -128,6 +134,9 @@ export async function logClientLocalBatch(
         styleType: input.styleType,
         pose,
         status: 'succeeded',
+        outputImagePath: input.previews?.[pose]
+          ? saveClientPosePreview(user.id, batch.id, pose, input.previews[pose]!)
+          : null,
         prompt: input.clientPetId ? `clientPetId=${input.clientPetId}` : null
       }))
     })

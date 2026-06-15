@@ -382,7 +382,8 @@ export async function runGenerationPipeline(petId: string): Promise<GenerationRe
       void logLocalGenerationBatch({
         styleType: updated.styleType,
         poses: Object.keys(posePaths) as PetPoseType[],
-        clientPetId: updated.id
+        clientPetId: updated.id,
+        posePaths
       })
     }
     broadcastPetsListChanged()

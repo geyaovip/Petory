@@ -18,7 +18,7 @@
         <p class="muted">输入已授权的管理员邮箱，我们会发送一次性登录链接。</p>
         <label class="field" style="margin-top: 20px">
           <span>邮箱</span>
-          <input id="adminEmail" type="email" placeholder="name@example.com" autocomplete="email" />
+          <input id="adminEmail" type="email" value="" placeholder="name@example.com" autocomplete="email" />
         </label>
         <div class="row">
           <button id="loginBtn" class="primary" type="button">发送登录链接</button>
@@ -42,7 +42,6 @@
           <div class="nav-label">运营</div>
           <button class="nav-item" type="button" data-view="users">用户</button>
           <button class="nav-item" type="button" data-view="devices">设备</button>
-          <button class="nav-item" type="button" data-view="commerce">支付与兑换</button>
         </div>
         <div class="nav-group">
           <div class="nav-label">生成</div>
@@ -135,30 +134,6 @@
             </div>
           </section>
 
-          <section id="view-commerce" class="view">
-            <div class="tabs">
-              <button class="tab active" type="button" data-commerce-tab="payments">支付订单</button>
-              <button class="tab" type="button" data-commerce-tab="codes">兑换码</button>
-            </div>
-            <div id="commerce-payments" class="subview active">
-              <div class="card">
-                <div id="paymentOrders" class="table-wrap"></div>
-                <div id="paymentPagination" class="pagination-wrap"></div>
-              </div>
-            </div>
-            <div id="commerce-codes" class="subview">
-              <div class="card">
-                <div id="redeemCreate" class="row" style="margin-top: 0">
-                  <input id="newCode" placeholder="新兑换码，如 PETORY-PRO-2026" style="flex: 1" />
-                  <input id="newCodeUses" type="number" placeholder="次数" value="10" style="width: 88px" />
-                  <button id="createCodeBtn" class="primary" type="button">创建</button>
-                </div>
-                <div id="codesTable" class="table-wrap" style="margin-top: 12px"></div>
-                <div id="codesPagination" class="pagination-wrap"></div>
-              </div>
-            </div>
-          </section>
-
           <section id="view-generation" class="view">
             <div class="tabs">
               <button class="tab active" type="button" data-gen-tab="batches">生成批次</button>
@@ -202,9 +177,8 @@
       const tokenKey = 'petory_admin_token'
       const viewMeta = {
         overview: { title: '数据概览', subtitle: '核心指标与趋势' },
-        users: { title: '用户', subtitle: '账号、计划与额度' },
+        users: { title: '用户', subtitle: '账号状态与用量' },
         devices: { title: '设备', subtitle: '登录设备与异常标记' },
-        commerce: { title: '支付与兑换', subtitle: '订单与兑换码' },
         generation: { title: '生成记录', subtitle: '批次与任务' },
         logs: { title: '对话与审计', subtitle: '对话、审计与登录' },
         config: { title: '系统配置', subtitle: '额度、开关与公告' }
@@ -220,8 +194,6 @@
       const listPages = {
         users: 1,
         devices: 1,
-        payments: 1,
-        codes: 1,
         batches: 1,
         jobs: 1,
         chat: 1,
@@ -258,6 +230,7 @@
 
       function showLogin(message) {
         setToken(null)
+        document.getElementById('adminEmail').value = ''
         document.getElementById('appShell').classList.add('hidden')
         document.getElementById('loginScreen').classList.remove('hidden')
         const err = document.getElementById('loginErr')
@@ -286,8 +259,6 @@
           badge.classList.add('hidden')
         }
         document.getElementById('saveConfigBtn').disabled = !canWrite
-        document.getElementById('createCodeBtn').disabled = !canWrite
-        document.getElementById('redeemCreate').classList.toggle('hidden', !canWrite)
       }
 
       function setView(viewId) {
@@ -360,17 +331,13 @@
         const { maps, esc } = F()
         const usageFields = [
           { key: 'freeDailyGenerationLimit', type: 'number' },
-          { key: 'proDailyGenerationLimit', type: 'number' },
           { key: 'freeDailyChatLimit', type: 'number' },
-          { key: 'proDailyChatLimit', type: 'number' },
           { key: 'jobTimeoutSeconds', cfgKey: 'jobTimeoutMs', type: 'number', transform: 'msToSec' }
         ]
         const serviceFields = [
           { key: 'registrationOpen' },
           { key: 'generationServiceEnabled' },
-          { key: 'chatServiceEnabled' },
-          { key: 'paymentEnabled' },
-          { key: 'mockPaymentEnabled', tone: 'warning' }
+          { key: 'chatServiceEnabled' }
         ]
 
         const renderNumber = (f) => {
@@ -403,7 +370,7 @@
           <section class="config-section">
             <div class="config-section-head">
               <h4>用量与任务</h4>
-              <p>设置不同用户计划的每日额度与生成任务超时时间。</p>
+              <p>设置所有用户的每日额度与生成任务超时时间。</p>
             </div>
             <div class="config-number-grid">${usageFields.map(renderNumber).join('')}</div>
           </section>
@@ -430,13 +397,11 @@
         const dash = await api('/api/admin/dashboard')
         document.getElementById('overviewStats').innerHTML = [
           ['总用户', dash.totalUsers],
-          ['Pro 用户', dash.proUsers],
           ['今日新注册', dash.todayNewUsers ?? 0],
           ['今日生成批次', dash.todayBatches ?? 0],
           ['今日生成任务', dash.todayJobs],
           ['今日生成成功', dash.todaySuccess],
           ['今日额度不足', dash.todayQuotaBlocked ?? 0],
-          ['有效兑换码', dash.activeRedeemCodes ?? 0],
           ['今日对话', dash.todayChats ?? 0],
           ['对话成功率', (dash.chatSuccessRate ?? 0) + '%'],
           ['生成成功率', dash.successRate + '%']
@@ -470,7 +435,6 @@
       function renderUsersTable(list) {
         const actionBtns = canWrite
           ? (u) => `
-              <button class="secondary" data-pro="${u.id}" type="button">开通 Pro</button>
               <button class="secondary" data-grant="${u.id}" type="button">+5 额度</button>
               ${
                 u.status === 'active'
@@ -478,20 +442,19 @@
                   : `<button class="secondary" data-enable="${u.id}" type="button">恢复</button>`
               }`
           : () => '<span class="muted">只读</span>'
-        document.getElementById('usersTable').innerHTML = `<table><thead><tr><th>用户</th><th>会员</th><th>状态</th><th>今日已用</th><th>操作</th></tr></thead><tbody>${
+        document.getElementById('usersTable').innerHTML = `<table><thead><tr><th>用户</th><th>状态</th><th>今日已用</th><th>操作</th></tr></thead><tbody>${
           list.length
             ? list
                 .map(
                   (u) => `<tr>
             <td>${F().esc(u.displayName)}<br><span class="muted">${F().esc(u.email)}</span></td>
-            <td>${F().planBadge(u.plan)}${u.proExpiresAt ? `<br><span class="muted">到期 ${F().formatDate(u.proExpiresAt)}</span>` : ''}</td>
             <td>${F().userStatusBadge(u.status)}</td>
             <td>生成 ${u.genUsedToday ?? 0} 次<br><span class="muted">对话 ${u.chatUsedToday ?? 0} 次</span></td>
             <td>${actionBtns(u)}</td>
           </tr>`
                 )
                 .join('')
-            : '<tr><td colspan="5" class="empty">没有匹配的用户</td></tr>'
+            : '<tr><td colspan="4" class="empty">没有匹配的用户</td></tr>'
         }</tbody></table>`
       }
 
@@ -528,48 +491,6 @@
         renderPagination('devicesPagination', data.pagination, (p) => void loadDevices(p))
       }
 
-      async function loadCommerce(paymentsPage = listPages.payments, codesPage = listPages.codes) {
-        setTablesLoading(['paymentOrders', 'codesTable'])
-        listPages.payments = paymentsPage
-        listPages.codes = codesPage
-        const [payments, codes] = await Promise.all([
-          api(`/api/admin/payment-orders?${pageQuery(paymentsPage)}`),
-          api(`/api/admin/redeem-codes?${pageQuery(codesPage)}`)
-        ])
-        document.getElementById('paymentOrders').innerHTML = `<table><thead><tr><th>用户</th><th>方案</th><th>金额</th><th>状态</th><th>时间</th></tr></thead><tbody>${
-          payments.orders.length
-            ? payments.orders
-                .map(
-                  (o) => `<tr>
-            <td>${F().esc(o.userName)}<br><span class="muted">${F().esc(o.userEmail)}</span></td>
-            <td>${F().esc(o.planName)}</td>
-            <td>¥${(o.amountCents / 100).toFixed(2)}</td>
-            <td>${F().statusBadge(o.status)}</td>
-            <td class="muted">${F().formatTime(o.createdAt)}</td>
-          </tr>`
-                )
-                .join('')
-            : '<tr><td colspan="5" class="empty">暂无订单</td></tr>'
-        }</tbody></table>`
-
-        document.getElementById('codesTable').innerHTML = `<table><thead><tr><th>兑换码</th><th>已用/上限</th><th>状态</th><th>操作</th></tr></thead><tbody>${
-          codes.codes.length
-            ? codes.codes
-                .map(
-                  (c) => `<tr>
-            <td><code>${F().esc(c.code)}</code><br><span class="muted">${F().esc(c.note || '')}</span></td>
-            <td>${c.usedCount} / ${c.maxUses}</td>
-            <td>${c.active ? F().badge('有效', 'ok') : F().badge('停用')}</td>
-            <td>${canWrite ? `<button class="secondary" data-toggle-code="${c.id}" type="button">${c.active ? '停用' : '启用'}</button>` : '-'}</td>
-          </tr>`
-                )
-                .join('')
-            : '<tr><td colspan="4" class="empty">暂无兑换码</td></tr>'
-        }</tbody></table>`
-        renderPagination('paymentPagination', payments.pagination, (p) => void loadCommerce(p, listPages.codes))
-        renderPagination('codesPagination', codes.pagination, (p) => void loadCommerce(listPages.payments, p))
-      }
-
       async function loadGeneration(batchesPage = listPages.batches, jobsPage = listPages.jobs) {
         setTablesLoading(['batchesTable', 'jobsTable'])
         listPages.batches = batchesPage
@@ -602,7 +523,7 @@
             <td>${F().esc(j.userName)}<br><span class="muted">${F().esc(j.userEmail)}</span></td>
             <td>${F().statusBadge(j.status)}</td>
             <td>${F().pick(F().maps.JOB_TYPE, j.jobType || '—')}<br><span class="muted">${F().pick(F().maps.STYLE, j.styleType)} · ${F().pick(F().maps.POSE, j.pose)}</span></td>
-            <td>${j.rawOutputUrl ? `<a href="${j.rawOutputUrl}" target="_blank" rel="noreferrer" title="查看大图"><img class="thumb" src="${j.rawOutputUrl}" alt="生成图" /></a>` : '—'}</td>
+            <td>${j.rawOutputUrl ? `<a href="${F().esc(j.rawOutputUrl)}" target="_blank" rel="noreferrer" title="查看大图"><img class="thumb" src="${F().esc(j.rawOutputUrl)}" alt="${F().esc(F().pick(F().maps.POSE, j.pose))}预览" loading="lazy" /></a>` : `<span class="muted">${j.jobType === 'client_local' ? '旧版客户端未上传预览' : '暂无预览'}</span>`}</td>
             <td class="muted">${j.status === 'failed' ? F().friendlyError(j.errorCode, j.errorMessage) : '—'}</td>
             <td class="muted">${F().formatDuration(j.durationMs)}</td>
             <td class="muted">${F().formatTime(j.createdAt)}</td>
@@ -682,7 +603,6 @@
         config: loadConfig,
         users: loadUsers,
         devices: loadDevices,
-        commerce: loadCommerce,
         generation: loadGeneration,
         logs: loadLogs
       }
@@ -786,14 +706,6 @@
         })
       })
 
-      document.querySelectorAll('[data-commerce-tab]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('[data-commerce-tab]').forEach((b) => b.classList.toggle('active', b === btn))
-          document.getElementById('commerce-payments').classList.toggle('active', btn.dataset.commerceTab === 'payments')
-          document.getElementById('commerce-codes').classList.toggle('active', btn.dataset.commerceTab === 'codes')
-        })
-      })
-
       document.querySelectorAll('[data-log-tab]').forEach((btn) => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('[data-log-tab]').forEach((b) => b.classList.toggle('active', b === btn))
@@ -827,52 +739,26 @@
         }
       }
 
-      document.getElementById('createCodeBtn').onclick = async () => {
-        try {
-          await api('/api/admin/redeem-codes', {
-            method: 'POST',
-            json: {
-              code: document.getElementById('newCode').value,
-              maxUses: Number(document.getElementById('newCodeUses').value) || 10
-            }
-          })
-          document.getElementById('newCode').value = ''
-          loadedViews.delete('commerce')
-          await loadView('commerce', true)
-          showToast('兑换码已创建')
-        } catch (e) {
-          showToast(e.message || '创建失败', 'error')
-        }
-      }
-
       document.body.addEventListener('click', async (e) => {
         const t = e.target
         if (!(t instanceof HTMLButtonElement)) return
         if (!canWrite || !getToken()) return
         const hasMutation =
-          t.dataset.pro ||
           t.dataset.grant ||
           t.dataset.disable ||
           t.dataset.enable ||
-          t.dataset.toggleCode ||
           t.dataset.flag
         if (!hasMutation) return
         const confirmation =
           t.dataset.disable
             ? '确定禁用这个用户吗？禁用后该账号将无法继续登录。'
-            : t.dataset.toggleCode
-              ? '确定修改这个兑换码的启用状态吗？'
-              : null
+            : null
         if (confirmation && !window.confirm(confirmation)) return
         let successMsg = null
         const previousLabel = t.textContent
         t.disabled = true
         t.setAttribute('aria-busy', 'true')
         try {
-          if (t.dataset.pro) {
-            await api(`/api/admin/users/${t.dataset.pro}/pro/activate`, { method: 'POST', json: {} })
-            successMsg = '已开通 Pro'
-          }
           if (t.dataset.grant) {
             await api(`/api/admin/users/${t.dataset.grant}/quota/grant`, { method: 'POST', json: { amount: 5, reason: 'admin panel' } })
             successMsg = '已赠送 5 次额度'
@@ -885,10 +771,6 @@
             await api(`/api/admin/users/${t.dataset.enable}/enable`, { method: 'POST' })
             successMsg = '已恢复用户'
           }
-          if (t.dataset.toggleCode) {
-            await api(`/api/admin/redeem-codes/${t.dataset.toggleCode}/toggle`, { method: 'POST' })
-            successMsg = '兑换码状态已更新'
-          }
           if (t.dataset.flag) {
             const nextFlagged = t.dataset.flagged !== 'true'
             await api(`/api/admin/devices/${t.dataset.flag}/flag`, {
@@ -900,8 +782,7 @@
           if (successMsg) {
             loadedViews.delete(currentView)
             if (t.dataset.flag) loadedViews.delete('devices')
-            if (t.dataset.pro || t.dataset.grant || t.dataset.disable || t.dataset.enable) loadedViews.delete('users')
-            if (t.dataset.toggleCode) loadedViews.delete('commerce')
+            if (t.dataset.grant || t.dataset.disable || t.dataset.enable) loadedViews.delete('users')
             await loadView(currentView, true)
             showToast(successMsg)
           }

@@ -43,6 +43,18 @@ export function saveBatchPoseOutput(
   return filePath
 }
 
+export function saveClientPosePreview(
+  userId: string,
+  batchId: string,
+  pose: PetPoseType,
+  buffer: Buffer
+): string {
+  const dir = batchDir(userId, batchId)
+  const filePath = path.join(dir, `preview-${pose}.webp`)
+  fs.writeFileSync(filePath, buffer)
+  return filePath
+}
+
 export function saveInputImage(userId: string, jobId: string, buffer: Buffer, ext: string): string {
   const dir = jobDir(userId, jobId)
   const filePath = path.join(dir, `input.${ext}`)

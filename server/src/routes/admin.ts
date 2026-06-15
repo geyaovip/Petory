@@ -5,8 +5,6 @@ import { logAdminAction } from '../services/auditService.js'
 import { grantQuota } from '../services/quotaService.js'
 import { serializeJob } from '../services/generationService.js'
 import { serializeBatch } from '../services/batchService.js'
-import { countRedeemCodes, createRedeemCode, listRedeemCodes } from '../services/redeemService.js'
-import { countAdminPaymentOrders, listAdminPaymentOrders } from '../services/paymentService.js'
 import { prisma } from '../lib/prisma.js'
 import { getChatStatsForUser } from '../services/chatService.js'
 import { getEnhancedDashboard } from '../services/dashboardService.js'
@@ -16,7 +14,6 @@ import {
   type SystemConfigValues
 } from '../services/systemConfigService.js'
 import { parsePagination, prismaListArgs, toPaginationMeta } from '../lib/pagination.js'
-import type { PlanTier } from '../../../src/shared/types/auth.js'
 
 export const adminRoutes = new Hono<{ Variables: AuthVariables }>()
 
@@ -286,44 +283,6 @@ adminRoutes.post('/users/:id/quota/grant', requireAdminWrite, async (c) => {
   return c.json({ success: true })
 })
 
-adminRoutes.post('/users/:id/pro/activate', requireAdminWrite, async (c) => {
-  const admin = c.get('admin')!
-  const body = await c.req.json<{ expiresAt?: string }>()
-  const userId = c.req.param('id')
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      plan: 'pro',
-      proExpiresAt: body.expiresAt ? new Date(body.expiresAt) : null
-    }
-  })
-  await logAdminAction({
-    adminId: admin.id,
-    adminEmail: admin.email,
-    action: 'activate_pro',
-    targetType: 'user',
-    targetId: userId
-  })
-  return c.json({ success: true })
-})
-
-adminRoutes.post('/users/:id/pro/deactivate', requireAdminWrite, async (c) => {
-  const admin = c.get('admin')!
-  const userId = c.req.param('id')
-  await prisma.user.update({
-    where: { id: userId },
-    data: { plan: 'free', proExpiresAt: null }
-  })
-  await logAdminAction({
-    adminId: admin.id,
-    adminEmail: admin.email,
-    action: 'deactivate_pro',
-    targetType: 'user',
-    targetId: userId
-  })
-  return c.json({ success: true })
-})
-
 adminRoutes.get('/generation/jobs', async (c) => {
   const status = c.req.query('status')
   const where = status ? { status } : undefined
@@ -409,71 +368,3 @@ adminRoutes.get('/chat/logs', async (c) => {
     pagination: toPaginationMeta(total, query)
   })
 })
-
-adminRoutes.get('/redeem-codes', async (c) => {
-  const query = parsePagination(c)
-  const total = await countRedeemCodes()
-  const codes =
-    query.mode === 'all'
-      ? await listRedeemCodes(0, total)
-      : await listRedeemCodes(query.skip, query.take)
-  return c.json({ codes, pagination: toPaginationMeta(total, query) })
-})
-
-adminRoutes.post('/redeem-codes', requireAdminWrite, async (c) => {
-  const admin = c.get('admin')!
-  const body = await c.req.json<{
-    code?: string
-    plan?: PlanTier
-    maxUses?: number
-    expiresAt?: string | null
-    note?: string
-  }>()
-  if (!body.code?.trim()) return c.json({ success: false, message: '请填写兑换码。' }, 400)
-  const result = await createRedeemCode({
-    code: body.code,
-    plan: body.plan,
-    maxUses: body.maxUses,
-    expiresAt: body.expiresAt,
-    note: body.note
-  })
-  if (!result.success) return c.json(result, 400)
-  await logAdminAction({
-    adminId: admin.id,
-    adminEmail: admin.email,
-    action: 'create_redeem_code',
-    targetType: 'redeem_code',
-    targetId: result.code?.id,
-    detail: body.code
-  })
-  return c.json(result)
-})
-
-adminRoutes.get('/payment-orders', async (c) => {
-  const query = parsePagination(c)
-  const total = await countAdminPaymentOrders()
-  const orders =
-    query.mode === 'all'
-      ? await listAdminPaymentOrders(0, total)
-      : await listAdminPaymentOrders(query.skip, query.take)
-  return c.json({ orders, pagination: toPaginationMeta(total, query) })
-})
-
-adminRoutes.post('/redeem-codes/:id/toggle', requireAdminWrite, async (c) => {
-  const admin = c.get('admin')!
-  const record = await prisma.redeemCode.findUnique({ where: { id: c.req.param('id') } })
-  if (!record) return c.json({ success: false, message: '兑换码不存在。' }, 404)
-  await prisma.redeemCode.update({
-    where: { id: record.id },
-    data: { active: !record.active }
-  })
-  await logAdminAction({
-    adminId: admin.id,
-    adminEmail: admin.email,
-    action: record.active ? 'disable_redeem_code' : 'enable_redeem_code',
-    targetType: 'redeem_code',
-    targetId: record.id
-  })
-  return c.json({ success: true, active: !record.active })
-})
-

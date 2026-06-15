@@ -2,7 +2,6 @@
  * Admin console display labels — map internal field values to readable Chinese.
  */
 ;(function () {
-  const PLAN = { free: '免费版', pro: 'Pro 会员' }
   const USER_STATUS = { active: '正常', disabled: '已禁用' }
   const JOB_STATUS = {
     pending: '排队中',
@@ -34,18 +33,12 @@
     remind: '提醒你',
     angry: '小生气'
   }
-  const PAYMENT_STATUS = {
-    pending: '待支付',
-    paid: '已支付',
-    failed: '支付失败',
-    cancelled: '已取消'
-  }
   const ERROR_CODE = {
     GENERATION_FAILED: '生成失败',
     CHAT_FAILED: '对话失败',
     CHAT_QUOTA_EXCEEDED: '对话额度不足',
     QUOTA_EXCEEDED: '生成额度不足',
-    STYLE_LOCKED: '风格需 Pro',
+    STYLE_LOCKED: '该功能暂不可用',
     AUTH_EXPIRED: '登录过期',
     SERVICE_DISABLED: '服务维护中',
     NETWORK_ERROR: '网络错误',
@@ -60,31 +53,26 @@
     disable_user: '禁用用户',
     enable_user: '恢复用户',
     grant_quota: '赠送生成额度',
-    activate_pro: '开通 Pro',
-    deactivate_pro: '取消 Pro',
+    activate_pro: '旧版权益变更',
+    deactivate_pro: '旧版权益变更',
     flag_device: '标记异常设备',
     unflag_device: '取消设备标记',
-    create_redeem_code: '创建兑换码',
-    disable_redeem_code: '停用兑换码',
-    enable_redeem_code: '启用兑换码'
+    create_redeem_code: '旧版权益凭证操作',
+    disable_redeem_code: '旧版权益凭证操作',
+    enable_redeem_code: '旧版权益凭证操作'
   }
-  const TARGET_TYPE = { user: '用户', device: '设备', redeem_code: '兑换码', system: '系统' }
+  const TARGET_TYPE = { user: '用户', device: '设备', redeem_code: '旧版权益凭证', system: '系统' }
   const CONFIG_LABEL = {
-    freeDailyGenerationLimit: '免费用户每日生成次数',
-    proDailyGenerationLimit: 'Pro 用户每日生成次数',
-    freeDailyChatLimit: '免费用户每日对话次数',
-    proDailyChatLimit: 'Pro 用户每日对话次数',
+    freeDailyGenerationLimit: '每日生成次数',
+    freeDailyChatLimit: '每日对话次数',
     jobTimeoutSeconds: '单任务超时（秒）',
     registrationOpen: '允许新用户注册',
     generationServiceEnabled: '开启图片生成服务',
     chatServiceEnabled: '开启 AI 对话服务',
-    paymentEnabled: '开启支付功能',
-    mockPaymentEnabled: '开启模拟支付（测试）',
     maintenanceNotice: '维护公告（客户端可见）'
   }
   const CONFIG_HINT = {
     jobTimeoutSeconds: '超过此时长未完成的生成任务将标记失败。',
-    mockPaymentEnabled: '仅测试环境使用，正式环境请关闭。',
     maintenanceNotice: '留空表示无公告；填写后会在客户端展示。'
   }
   const OS = { darwin: 'macOS', win32: 'Windows', linux: 'Linux' }
@@ -114,11 +102,6 @@
     if (status === 'failed' || status === 'disabled' || status === 'cancelled') return badge(label, 'danger')
     if (status === 'processing' || status === 'pending') return badge(label, 'warn')
     return badge(label, 'info')
-  }
-
-  function planBadge(plan) {
-    const label = pick(PLAN, plan, plan)
-    return plan === 'pro' ? badge(label, 'info') : badge(label)
   }
 
   function userStatusBadge(status) {
@@ -219,7 +202,6 @@
     pick,
     badge,
     statusBadge,
-    planBadge,
     userStatusBadge,
     formatTime,
     formatDate,
@@ -230,6 +212,6 @@
     formatAuditDetail,
     deviceLabel,
     osLabel,
-    maps: { PLAN, USER_STATUS, JOB_STATUS, JOB_TYPE, STYLE, POSE, PAYMENT_STATUS, ERROR_CODE, AUDIT_ACTION, TARGET_TYPE, CONFIG_LABEL, CONFIG_HINT }
+    maps: { USER_STATUS, JOB_STATUS, JOB_TYPE, STYLE, POSE, ERROR_CODE, AUDIT_ACTION, TARGET_TYPE, CONFIG_LABEL, CONFIG_HINT }
   }
 })()
