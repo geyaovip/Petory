@@ -6,7 +6,7 @@ async function loadManifest() {
   const winMeta = document.getElementById('win-meta')
 
   try {
-    const response = await fetch('releases/latest.json', { cache: 'no-store' })
+    const response = await fetch('/releases/latest.json', { cache: 'no-store' })
     if (!response.ok) throw new Error('manifest unavailable')
     const data = await response.json()
 
