@@ -26,7 +26,7 @@ import type {
   RegeneratePoseResult
 } from '@shared/types/pet'
 import type { OnboardingIntent } from '@shared/types/onboarding'
-import type { UpdateState } from '@shared/types/update'
+import type { UpdateInstallResult, UpdateState } from '@shared/types/update'
 
 export interface PetoryAPI {
   platform: NodeJS.Platform
@@ -161,7 +161,7 @@ export interface PetoryAPI {
     getState: () => Promise<UpdateState>
     check: () => Promise<UpdateState>
     download: () => Promise<UpdateState>
-    install: () => void
+    install: () => Promise<UpdateInstallResult>
     onStateChanged: (callback: (state: UpdateState) => void) => () => void
   }
   legal: {

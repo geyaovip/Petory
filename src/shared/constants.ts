@@ -20,6 +20,7 @@ export const PETORY_DOWNLOAD_PAGE = `${PETORY_WEBSITE_URL}/download/`
 export const PETORY_TERMS_URL = `${PETORY_WEBSITE_URL}/terms/`
 export const PETORY_PRIVACY_URL = `${PETORY_WEBSITE_URL}/privacy/`
 export const DEFAULT_UPDATE_FEED_URL = `${PETORY_WEBSITE_URL}/releases`
+export const PETORY_GITHUB_RELEASE_BASE = 'https://github.com/geyaovip/petory/releases/download'
 
 export const CONTENT_SAFETY = {
   upload:

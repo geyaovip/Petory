@@ -118,6 +118,15 @@ export function SettingsPanel(): ReactElement {
     window.setTimeout(() => setStatus(null), 3000)
   }
 
+  const handleInstallUpdate = async (): Promise<void> => {
+    const result = await window.petory.update.install()
+    if (result.message) {
+      showStatus(result.message, result.success ? 'success' : 'error')
+    }
+  }
+
+  const isManualInstall = updateState?.installMode === 'manual'
+
   if (!settings) {
     return <div className="flex h-full items-center justify-center bg-petory-bg text-[13px] text-petory-text-tertiary">加载设置中…</div>
   }
@@ -307,27 +316,30 @@ export function SettingsPanel(): ReactElement {
                   <Button
                     size="sm"
                     variant="secondary"
-                    disabled={
-                      updateState?.status === 'checking' ||
-                      updateState?.status === 'downloading' ||
-                      updateState?.status === 'ready'
-                    }
+                    disabled={updateState?.status === 'checking' || updateState?.status === 'downloading'}
                     onClick={() => void window.petory.update.check()}
                   >
                     {updateState?.status === 'checking' ? '检查中…' : '检查更新'}
                   </Button>
                 </PreferenceRow>
                 {updateState?.status === 'available' ? (
-                  <PreferenceRow title={`发现新版本 ${updateState.version}`}>
+                  <PreferenceRow
+                    title={`发现新版本 ${updateState.version}`}
+                    description={
+                      isManualInstall
+                        ? '将打开安装包，请先将 Petory 退出，再把新版本拖入「应用程序」。'
+                        : undefined
+                    }
+                  >
                     <Button
                       size="sm"
-                      onClick={() => void window.petory.update.download()}
+                      onClick={() => void (isManualInstall ? handleInstallUpdate() : window.petory.update.download())}
                     >
-                      下载更新
+                      {isManualInstall ? '打开安装包' : '下载更新'}
                     </Button>
                   </PreferenceRow>
                 ) : null}
-                {updateState?.status === 'downloading' ? (
+                {updateState?.status === 'downloading' && !isManualInstall ? (
                   <PreferenceRow
                     title={`正在下载 ${updateState.version ?? ''}`}
                     description={
@@ -339,9 +351,17 @@ export function SettingsPanel(): ReactElement {
                     <span className="text-[12px] text-petory-text-tertiary">下载中…</span>
                   </PreferenceRow>
                 ) : null}
-                {updateState?.status === 'ready' ? (
+                {updateState?.status === 'ready' && !isManualInstall ? (
                   <PreferenceRow title="更新已准备好" description="安装后应用会自动重启。">
-                    <Button size="sm" onClick={() => window.petory.update.install()}>安装并重启</Button>
+                    <Button size="sm" onClick={() => void handleInstallUpdate()}>安装并重启</Button>
+                  </PreferenceRow>
+                ) : null}
+                {updateState?.status === 'ready' && isManualInstall ? (
+                  <PreferenceRow
+                    title="更新已准备好"
+                    description="将打开安装包，请先将 Petory 退出，再把新版本拖入「应用程序」。"
+                  >
+                    <Button size="sm" onClick={() => void handleInstallUpdate()}>打开安装包</Button>
                   </PreferenceRow>
                 ) : null}
                 {updateState?.status === 'not-available' ? (

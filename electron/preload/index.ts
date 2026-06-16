@@ -32,7 +32,7 @@ import type {
   PetPersonality
 } from '../../src/shared/types/pet'
 import type { OnboardingIntent } from '../../src/shared/types/onboarding'
-import type { UpdateState } from '../../src/shared/types/update'
+import type { UpdateInstallResult, UpdateState } from '../../src/shared/types/update'
 
 contextBridge.exposeInMainWorld('petory', {
   platform: process.platform as NodeJS.Platform,
@@ -225,7 +225,7 @@ contextBridge.exposeInMainWorld('petory', {
     getState: (): Promise<UpdateState> => ipcRenderer.invoke(IPC.update.getState),
     check: (): Promise<UpdateState> => ipcRenderer.invoke(IPC.update.check),
     download: (): Promise<UpdateState> => ipcRenderer.invoke(IPC.update.download),
-    install: (): void => ipcRenderer.send(IPC.update.install),
+    install: (): Promise<UpdateInstallResult> => ipcRenderer.invoke(IPC.update.install),
     onStateChanged: (callback: (state: UpdateState) => void): (() => void) => {
       const handler = (_event: Electron.IpcRendererEvent, state: UpdateState): void => callback(state)
       ipcRenderer.on(IPC.update.stateChanged, handler)

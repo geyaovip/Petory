@@ -677,7 +677,7 @@ function registerIpc(): void {
   ipcMain.handle(IPC.update.getState, () => getUpdateState())
   ipcMain.handle(IPC.update.check, () => checkForUpdates())
   ipcMain.handle(IPC.update.download, () => downloadUpdate())
-  ipcMain.on(IPC.update.install, () => quitAndInstallUpdate())
+  ipcMain.handle(IPC.update.install, () => quitAndInstallUpdate())
 
   ipcMain.handle(IPC.legal.hasAccepted, () => hasAcceptedLegal())
   ipcMain.handle(IPC.legal.accept, () => saveLegalAcceptance())
