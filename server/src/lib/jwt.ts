@@ -9,8 +9,16 @@ export interface TokenPayload {
   email: string
 }
 
-export function signToken(payload: TokenPayload, expiresIn = '7d'): string {
-  return jwt.sign(payload, config.jwtSecret, { expiresIn })
+function resolveExpiresIn(override?: string): string | undefined {
+  const raw = (override ?? config.jwtExpiresIn).trim()
+  if (!raw || raw === 'never' || raw === '0') return undefined
+  return raw
+}
+
+export function signToken(payload: TokenPayload, expiresIn?: string): string {
+  const ttl = resolveExpiresIn(expiresIn)
+  if (!ttl) return jwt.sign(payload, config.jwtSecret)
+  return jwt.sign(payload, config.jwtSecret, { expiresIn: ttl })
 }
 
 export function verifyToken(token: string): TokenPayload {

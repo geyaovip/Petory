@@ -12,6 +12,8 @@ function required(name: string, fallback?: string): string {
 export const config = {
   port: Number(process.env.PORT ?? 8787),
   jwtSecret: required('JWT_SECRET', 'petory-dev-secret'),
+  /** Empty / "never" / "0" → token has no expiry; otherwise passed to jsonwebtoken expiresIn */
+  jwtExpiresIn: (process.env.JWT_EXPIRES_IN ?? '').trim(),
   databaseUrl: required(
     'DATABASE_URL',
     'postgresql://petory:petory@localhost:5433/petory?schema=public'
