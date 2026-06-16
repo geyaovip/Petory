@@ -57,6 +57,7 @@ import {
 } from './desktopPetService'
 import { consumeOnboardingIntent, setOnboardingIntent } from './onboardingIntent'
 import { findPetAwaitingFinalize, syncPetStatusFromDisk } from './petRecovery'
+import { importCloudBatch, listRecoverableCloudBatches } from './cloudPetRecovery'
 import { saveUpload, validateUpload } from './upload'
 import { getGrowthStats, handleDailyOpenRewards } from './growthService'
 import { endPomodoro, getPomodoroState, pausePomodoro, resumePomodoro, startPomodoro } from './pomodoroService'
@@ -585,6 +586,15 @@ function registerIpc(): void {
   ipcMain.on(IPC.pets.open, () => openPetsWindow())
   ipcMain.on(IPC.pets.close, () => closePetsWindow())
   ipcMain.handle(IPC.pets.list, () => listManagedPets())
+  ipcMain.handle(IPC.pets.listRecoverableCloud, () => listRecoverableCloudBatches())
+  ipcMain.handle(IPC.pets.importCloudBatch, async (_event, batchId: string) => {
+    const result = await importCloudBatch(batchId)
+    if (result.success) {
+      broadcastPetsListChanged()
+      openOnboardingToFinalize(result.petId, 'pets')
+    }
+    return result
+  })
   ipcMain.handle(IPC.pets.updateName, (_event, petId: string, name: string) => {
     const nextName = name.trim()
     if (!nextName) throw new Error('宠物名称不能为空')

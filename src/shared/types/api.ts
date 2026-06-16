@@ -53,6 +53,9 @@ export interface ServerBatchResponse {
   status: string
   posesTotal: number
   posesSucceeded: number
+  createdAt?: string
+  updatedAt?: string
+  inputImageUrl?: string | null
   jobs: ServerBatchJob[]
   quota?: ServerQuotaView
   success?: boolean

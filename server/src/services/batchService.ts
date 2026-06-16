@@ -46,6 +46,7 @@ export function serializeBatch(batch: {
   posesSucceeded: number
   createdAt: Date
   updatedAt: Date
+  inputImagePath?: string | null
   jobs: Array<{
     id: string
     pose: string
@@ -64,6 +65,7 @@ export function serializeBatch(batch: {
     posesSucceeded: batch.posesSucceeded,
     createdAt: batch.createdAt.toISOString(),
     updatedAt: batch.updatedAt.toISOString(),
+    inputImageUrl: batch.inputImagePath ? toPublicUrl(batch.inputImagePath) : null,
     jobs: batch.jobs.map((job) => ({
       jobId: job.id,
       pose: job.pose,

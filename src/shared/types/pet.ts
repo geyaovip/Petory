@@ -50,6 +50,8 @@ export interface Pet {
   desktopY?: number
   /** Built-in demo pet — no MiniMax generation. */
   isSample?: boolean
+  /** Cloud generation batch imported into this local pet. */
+  cloudBatchId?: string
 }
 
 export interface PetDesktopSummary {
@@ -140,3 +142,15 @@ export interface FinalizePetInput {
 }
 
 export type PetIpcResult = GenerationResult | GenerationFailure
+
+export interface RecoverableCloudBatch {
+  batchId: string
+  createdAt: string
+  posesSucceeded: number
+  posesTotal: number
+  previewUrl: string | null
+}
+
+export type ImportCloudBatchResult =
+  | { success: true; petId: string }
+  | { success: false; message: string }

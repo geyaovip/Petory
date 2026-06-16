@@ -95,7 +95,9 @@ export const IPC = {
     listChanged: 'petory:pets:listChanged',
     updateName: 'petory:pets:updateName',
     updatePersonality: 'petory:pets:updatePersonality',
-    activate: 'petory:pets:activate'
+    activate: 'petory:pets:activate',
+    listRecoverableCloud: 'petory:pets:listRecoverableCloud',
+    importCloudBatch: 'petory:pets:importCloudBatch'
   },
   data: {
     export: 'petory:data:export',

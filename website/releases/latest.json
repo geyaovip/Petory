@@ -1,22 +1,21 @@
 {
-  "version": "2.4.18",
-  "releasedAt": "2026-06-16",
+  "version": "2.4.19",
+  "releasedAt": "2026-06-13",
   "mac": {
-    "fileName": "Petory-2.4.18-universal.dmg",
-    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.18/Petory-2.4.18-universal.dmg",
+    "fileName": "Petory-2.4.19-universal.dmg",
+    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.19/Petory-2.4.19-universal.dmg",
     "sizeLabel": "~189 MB"
   },
   "win": {
-    "fileName": "Petory-Setup-2.4.18.exe",
-    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.18/Petory-Setup-2.4.18.exe",
+    "fileName": "Petory-Setup-2.4.19.exe",
+    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.19/Petory-Setup-2.4.19.exe",
     "sizeLabel": "~92 MB"
   },
   "updateFeed": "https://petory.chat/releases",
   "changelog": [
-    "优化生成保真：idle 仅用原图定身份，避免主体被示例猫带偏",
-    "其余姿势在 idle 锚点基础上使用姿势参考图，保持六姿势统一",
-    "加强身份保真提示词，上传参考图压缩质量提升",
-    "修复生成中关闭创建页后桌宠无法上桌面的问题",
-    "创建桌宠窗口层级提升，不再被宠物管理挡住"
+    "支持从云端导入已生成完成的桌宠，修复关闭创建页后宠物管理看不到的问题",
+    "宠物管理显示待继续生成/待完成创建的草稿宠物",
+    "优化生成保真：idle 仅用原图定身份，其余姿势用锚点+姿势参考",
+    "修复生成中关闭创建页后桌宠无法上桌面的问题"
   ]
 }

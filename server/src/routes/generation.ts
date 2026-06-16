@@ -5,7 +5,7 @@ import { checkRateLimit } from '../lib/rateLimit.js'
 import type { AuthVariables } from '../middleware/auth.js'
 import { requireUser } from '../middleware/auth.js'
 import { defaultPosesForUser, parsePosesJson } from '../services/entitlementService.js'
-import { getBatchForUser, runGenerationBatch } from '../services/batchService.js'
+import { getBatchForUser, runGenerationBatch, serializeBatch } from '../services/batchService.js'
 import { createSinglePoseRegen, logClientLocalBatch, serializeJob } from '../services/generationService.js'
 import { canConsumeGeneration, consumeGeneration, getQuotaView } from '../services/quotaService.js'
 import { assertDeviceAllowed } from '../services/deviceGuardService.js'
@@ -245,6 +245,26 @@ generationRoutes.post('/jobs', async (c) => {
   }
   const firstJob = result.batch.jobs[0]
   return c.json({ ...firstJob, batchId: result.batch.batchId, quota })
+})
+
+generationRoutes.get('/recoverable', async (c) => {
+  const user = c.get('user')!
+  const batches = await prisma.generationBatch.findMany({
+    where: {
+      userId: user.id,
+      jobType: 'full_batch',
+      status: 'succeeded',
+      posesSucceeded: { gte: 1 }
+    },
+    include: { jobs: { orderBy: { createdAt: 'asc' } } },
+    orderBy: { createdAt: 'desc' },
+    take: 5
+  })
+  const quota = await getQuotaView(user)
+  return c.json({
+    batches: batches.map((batch) => serializeBatch(batch)),
+    quota
+  })
 })
 
 generationRoutes.get('/batch/:id', async (c) => {

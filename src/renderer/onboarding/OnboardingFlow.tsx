@@ -42,6 +42,22 @@ export function OnboardingFlow(): ReactElement {
         return
       }
 
+      if (intent?.mode === 'resume') {
+        const pets = await window.petory.pets.list()
+        const pet = pets.find((item) => item.id === intent.petId)
+        setReturnToPets(intent.returnTo === 'pets')
+        if (!pet) {
+          setReplaceMode(hasActive)
+          setStep(hasActive ? 'upload' : 'welcome')
+          return
+        }
+        setReplaceMode(false)
+        setPetId(pet.id)
+        setIsSamplePet(false)
+        void runGeneration(pet.id)
+        return
+      }
+
       if (intent?.mode === 'restyle') {
         const pets = await window.petory.pets.list()
         const pet = pets.find((item) => item.id === intent.petId)

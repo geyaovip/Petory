@@ -12,6 +12,7 @@ import { clearLegalAcceptance } from './legalStore'
 import { clearChatHistory } from './chatStore'
 import { getPetDir, loadStore, saveStore } from './petStore'
 import { syncPetStatusFromDisk } from './petRecovery'
+import { isManagedPetCandidate } from './cloudPetRecovery'
 import type { PetStoreData } from '../../src/shared/types/pet'
 
 const DATA_FILES = [
@@ -267,7 +268,7 @@ export function wipeAllLocalData(): void {
 
 export function listManagedPets() {
   syncPetStatusFromDisk()
-  return loadStore().pets.filter((p) => p.status === 'active' || p.status === 'generated')
+  return loadStore().pets.filter((pet) => isManagedPetCandidate(pet))
 }
 
 export function openFeedbackUrl(): void {

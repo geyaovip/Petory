@@ -401,6 +401,58 @@ export async function runGenerationPipeline(petId: string): Promise<GenerationRe
   }
 }
 
+export async function applyRemoteBatchToPet(
+  petId: string,
+  jobs: ServerBatchJob[]
+): Promise<GenerationResult | GenerationFailure> {
+  const pet = getPetById(petId)
+  if (!pet) {
+    return {
+      success: false,
+      code: 'generation_failed',
+      message: ERROR_MESSAGES.generation_failed
+    }
+  }
+
+  const succeededJobs = jobs.filter((job) => job.status === 'succeeded' && job.rawOutputUrl)
+  if (succeededJobs.length === 0) {
+    return {
+      success: false,
+      code: 'generation_failed',
+      message: '没有可导入的生成结果。'
+    }
+  }
+
+  try {
+    const { posePaths, idleRawPath } = await processRemoteJobs(
+      pet,
+      petId,
+      succeededJobs,
+      pet.posePaths ?? {},
+      0,
+      succeededJobs.length
+    )
+    if (!posePaths.idle) {
+      return {
+        success: false,
+        code: 'generation_failed',
+        message: ERROR_MESSAGES.generation_failed
+      }
+    }
+
+    updatePet(petId, {
+      imageMinimaxRawPath: idleRawPath,
+      imagePetPath: posePaths.idle,
+      posePaths,
+      status: 'generated'
+    })
+    broadcastPetsListChanged()
+    return { success: true, petId }
+  } catch (error) {
+    return mapPipelineError(error) as GenerationFailure
+  }
+}
+
 export async function runCompletePosesPipeline(petId: string): Promise<CompletePosesResult> {
   const pet = getPetById(petId)
   if (!pet || !hasUploadReference(pet)) {

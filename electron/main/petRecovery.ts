@@ -3,6 +3,7 @@ import path from 'path'
 import { PET_POSE_ORDER } from '../../src/shared/poses'
 import type { Pet, PetPoseAssets } from '../../src/shared/types/pet'
 import { getPoseOutputPath } from './poseService'
+import { hasUploadReference } from './image/referencePath'
 import { ensurePetDirs, loadStore, saveStore } from './petStore'
 
 /** Promote draft pets whose pose files already exist on disk (e.g. generation finished after closing onboarding). */
@@ -53,6 +54,10 @@ export function petNeedsFinalize(pet: Pet): boolean {
     !pet.name.trim() &&
     Boolean(pet.imagePetPath)
   )
+}
+
+export function petNeedsResumeGeneration(pet: Pet): boolean {
+  return !pet.isSample && pet.status === 'draft' && hasUploadReference(pet) && !pet.imagePetPath
 }
 
 export function findPetAwaitingFinalize(): Pet | null {

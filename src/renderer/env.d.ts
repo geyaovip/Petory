@@ -23,7 +23,9 @@ import type {
   PetIpcResult,
   PetPersonality,
   PetPoseType,
-  RegeneratePoseResult
+  RegeneratePoseResult,
+  RecoverableCloudBatch,
+  ImportCloudBatchResult
 } from '@shared/types/pet'
 import type { OnboardingIntent } from '@shared/types/onboarding'
 import type { UpdateInstallResult, UpdateState } from '@shared/types/update'
@@ -134,6 +136,8 @@ export interface PetoryAPI {
     updateName: (petId: string, name: string) => Promise<Pet>
     updatePersonality: (personality: PetPersonality, petId?: string) => Promise<Pet>
     activate: (petId: string) => Promise<ActivatePetResult>
+    listRecoverableCloud: () => Promise<RecoverableCloudBatch[]>
+    importCloudBatch: (batchId: string) => Promise<ImportCloudBatchResult>
   }
   data: {
     export: () => Promise<{ success: true; path: string } | { success: false; message: string }>

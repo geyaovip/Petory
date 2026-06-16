@@ -28,6 +28,8 @@ import type {
   PetDesktopSummary,
   PetIpcResult,
   PoseCompletionStatus,
+  RecoverableCloudBatch,
+  ImportCloudBatchResult,
   RegeneratePoseResult,
   PetPersonality
 } from '../../src/shared/types/pet'
@@ -192,7 +194,11 @@ contextBridge.exposeInMainWorld('petory', {
     updateName: (petId: string, name: string): Promise<Pet> => ipcRenderer.invoke(IPC.pets.updateName, petId, name),
     updatePersonality: (personality: PetPersonality, petId?: string): Promise<Pet> =>
       ipcRenderer.invoke(IPC.pets.updatePersonality, personality, petId),
-    activate: (petId: string): Promise<ActivatePetResult> => ipcRenderer.invoke(IPC.pets.activate, petId)
+    activate: (petId: string): Promise<ActivatePetResult> => ipcRenderer.invoke(IPC.pets.activate, petId),
+    listRecoverableCloud: (): Promise<RecoverableCloudBatch[]> =>
+      ipcRenderer.invoke(IPC.pets.listRecoverableCloud),
+    importCloudBatch: (batchId: string): Promise<ImportCloudBatchResult> =>
+      ipcRenderer.invoke(IPC.pets.importCloudBatch, batchId)
   },
   data: {
     export: (): Promise<{ success: true; path: string } | { success: false; message: string }> =>
