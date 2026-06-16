@@ -1,17 +1,9 @@
 import { prisma } from '../lib/prisma.js'
-import { todayKey } from '../lib/entitlements.js'
-
-function dayStart(offsetDays: number): Date {
-  const today = todayKey()
-  const d = new Date(`${today}T00:00:00.000Z`)
-  d.setUTCDate(d.getUTCDate() - offsetDays)
-  return d
-}
+import { beijingDateKey, beijingDayStartUtc } from '../lib/beijingTime.js'
 
 export async function getEnhancedDashboard() {
-  const today = todayKey()
-  const startOfDay = new Date(`${today}T00:00:00.000Z`)
-  const weekStart = dayStart(6)
+  const startOfDay = beijingDayStartUtc(0)
+  const weekStart = beijingDayStartUtc(6)
 
   const [
     totalUsers,
@@ -58,9 +50,9 @@ export async function getEnhancedDashboard() {
   }> = []
 
   for (let offset = 6; offset >= 0; offset -= 1) {
-    const start = dayStart(offset)
-    const end = dayStart(offset - 1)
-    const date = start.toISOString().slice(0, 10)
+    const start = beijingDayStartUtc(offset)
+    const end = beijingDayStartUtc(offset - 1)
+    const date = beijingDateKey(offset)
     const [generations, chats, newUsers] = await Promise.all([
       prisma.generationJob.count({
         where: { createdAt: { gte: start, lt: end }, status: 'succeeded' }
