@@ -1,22 +1,22 @@
 {
-  "version": "2.4.16",
-  "releasedAt": "2026-06-16",
+  "version": "2.4.17",
+  "releasedAt": "2026-06-13",
   "mac": {
-    "fileName": "Petory-2.4.16-universal.dmg",
-    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.16/Petory-2.4.16-universal.dmg",
+    "fileName": "Petory-2.4.17-universal.dmg",
+    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.17/Petory-2.4.17-universal.dmg",
     "sizeLabel": "~189 MB"
   },
   "win": {
-    "fileName": "Petory-Setup-2.4.16.exe",
-    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.16/Petory-Setup-2.4.16.exe",
+    "fileName": "Petory-Setup-2.4.17.exe",
+    "url": "https://github.com/geyaovip/petory/releases/download/v2.4.17/Petory-Setup-2.4.17.exe",
     "sizeLabel": "~92 MB"
   },
   "updateFeed": "https://petory.chat/releases",
   "changelog": [
+    "修复生成过程中关闭创建页后桌宠无法上桌面的问题，支持自动恢复命名流程",
+    "启动时检测未完成的桌宠并引导完成创建；宠物管理新增「完成创建」入口",
+    "创建桌宠窗口层级提升，不再被宠物管理窗口挡住",
     "生成姿势时附带默认示例姿势图作参考，六姿势更贴近官方示例",
-    "优化姿势提示词：focus 趴卧、sleep 蜷缩、坐姿姿势更统一",
-    "修复悬停桌宠时鼠标指针不立即变化的问题",
-    "修复宠物管理窗口被桌宠挡住或无法弹出的问题",
-    "macOS 未签名版更新改为打开安装包手动安装（2.4.15）"
+    "修复宠物管理窗口被桌宠挡住或无法弹出的问题"
   ]
 }

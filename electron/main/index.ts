@@ -56,6 +56,7 @@ import {
   syncAllDesktopPets
 } from './desktopPetService'
 import { consumeOnboardingIntent, setOnboardingIntent } from './onboardingIntent'
+import { findPetAwaitingFinalize, syncPetStatusFromDisk } from './petRecovery'
 import { saveUpload, validateUpload } from './upload'
 import { getGrowthStats, handleDailyOpenRewards } from './growthService'
 import { endPomodoro, getPomodoroState, pausePomodoro, resumePomodoro, startPomodoro } from './pomodoroService'
@@ -139,6 +140,28 @@ const AUTH_PROTOCOL = 'petory'
 let pendingAuthDeepLink = process.argv.find((arg) => arg.startsWith(`${AUTH_PROTOCOL}://`)) ?? null
 let authDeepLinkInFlight = false
 const generationInFlight = new Set<string>()
+
+function isOnboardingWindowVisible(): boolean {
+  const win = getOnboardingWindow()
+  return Boolean(win && !win.isDestroyed() && win.isVisible())
+}
+
+function openOnboardingToFinalize(petId: string, returnTo: 'pets' | undefined = 'pets'): void {
+  const intent: OnboardingIntent = { mode: 'finalize', petId, returnTo }
+  const wasOpen = Boolean(getOnboardingWindow() && !getOnboardingWindow()!.isDestroyed())
+  setOnboardingIntent(intent)
+  const win = openOnboardingWindow()
+  if (wasOpen) {
+    win.webContents.send(IPC.pet.onboardingIntent, intent)
+  }
+}
+
+function resumeOnboardingAfterGeneration(petId: string): void {
+  const pet = getPetById(petId)
+  if (!pet || pet.isSample || pet.status !== 'generated' || pet.name.trim()) return
+  if (isOnboardingWindowVisible()) return
+  openOnboardingToFinalize(petId, 'pets')
+}
 
 if (app.isPackaged) {
   app.setAsDefaultProtocolClient(AUTH_PROTOCOL)
@@ -416,6 +439,7 @@ function registerIpc(): void {
         const pet = getPetById(petId)
         if (pet) patchUserSettings({ lastSelectedStyle: pet.styleType })
         broadcastAuthStateChanged()
+        resumeOnboardingAfterGeneration(petId)
       }
       return result
     } finally {
@@ -705,7 +729,23 @@ function registerChatShortcut(): void {
 
 function bootstrapMainApp(): void {
   refreshInstalledSamplePets()
+  if (syncPetStatusFromDisk()) {
+    broadcastPetsListChanged()
+  }
+
   const hasActive = getActivePet() !== null
+  const pendingFinalize = findPetAwaitingFinalize()
+  if (pendingFinalize) {
+    if (hasActive) {
+      syncAllDesktopPets()
+      handleDailyOpenRewards()
+      startSedentaryService()
+      startSleepService()
+    }
+    openOnboardingToFinalize(pendingFinalize.id, hasActive ? 'pets' : undefined)
+    return
+  }
+
   if (hasActive) {
     syncAllDesktopPets()
     handleDailyOpenRewards()

@@ -68,6 +68,9 @@ export function PetManagerPanel(): ReactElement {
 
   const selectedPet = useMemo(() => pets.find((pet) => pet.id === selectedPetId) ?? null, [pets, selectedPetId])
 
+  const needsFinalize = (pet: Pet): boolean =>
+    !pet.isSample && pet.status === 'generated' && !pet.name.trim() && Boolean(pet.imagePetPath)
+
   const showStatus = (message: string, error = false): void => {
     setStatus({ message, error })
     window.setTimeout(() => setStatus(null), 3000)
@@ -186,7 +189,13 @@ export function PetManagerPanel(): ReactElement {
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13px] font-semibold">{pet.name || '未命名'}</span>
                         <span className="mt-0.5 block truncate text-[11px] text-petory-text-tertiary">
-                          {pet.isActive ? '主宠' : pet.onDesktop ? '桌面显示中' : '未显示'}
+                          {needsFinalize(pet)
+                            ? '待完成创建'
+                            : pet.isActive
+                              ? '主宠'
+                              : pet.onDesktop
+                                ? '桌面显示中'
+                                : '未显示'}
                         </span>
                       </span>
                     </button>
@@ -210,6 +219,9 @@ export function PetManagerPanel(): ReactElement {
 
           {selectedPet ? (
             <main className="min-h-0 overflow-y-auto overscroll-contain px-7 py-6">
+              {needsFinalize(selectedPet) ? (
+                <StatusBanner className="mb-5" message={PETS_COPY.pendingFinalize.banner} variant="success" />
+              ) : null}
               <section className="flex items-center gap-5 rounded-2xl border border-petory-border bg-petory-surface p-5">
                 <div className="bg-petory-checker flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-petory-border">
                   {previews[selectedPet.id] ? (
@@ -282,14 +294,35 @@ export function PetManagerPanel(): ReactElement {
                     {selectedPet.isSample ? ' · 示例宠物' : ''}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => void toggleDesktop(selectedPet)}>
-                      {selectedPet.onDesktop ? '从桌面隐藏' : '显示在桌面'}
-                    </Button>
-                    {!selectedPet.isActive ? (
-                      <Button size="sm" variant="secondary" onClick={() => void activatePet(selectedPet.id)}>
-                        设为主宠
+                    {needsFinalize(selectedPet) ? (
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          window.petory.pet.openOnboarding({
+                            mode: 'finalize',
+                            petId: selectedPet.id,
+                            returnTo: 'pets'
+                          })
+                        }
+                      >
+                        {PETS_COPY.pendingFinalize.action}
                       </Button>
-                    ) : null}
+                    ) : (
+                      <>
+                        <Button size="sm" onClick={() => void toggleDesktop(selectedPet)}>
+                          {selectedPet.onDesktop ? '从桌面隐藏' : '显示在桌面'}
+                        </Button>
+                        {!selectedPet.isActive ? (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => void activatePet(selectedPet.id)}
+                          >
+                            设为主宠
+                          </Button>
+                        ) : null}
+                      </>
+                    )}
                   </div>
                 </div>
               </section>

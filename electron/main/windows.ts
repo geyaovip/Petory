@@ -110,10 +110,20 @@ function elevatePanelAbovePet(win: BrowserWindow): void {
   win.setAlwaysOnTop(true)
 }
 
-function presentPanelWindow(win: BrowserWindow): void {
+function presentPanelWindow(win: BrowserWindow, stack: 'panel' | 'flow' = 'panel'): void {
   if (win.isDestroyed()) return
   if (win.isMinimized()) win.restore()
-  elevatePanelAbovePet(win)
+  if (stack === 'flow') {
+    if (process.platform === 'darwin') {
+      win.setAlwaysOnTop(true, 'pop-up-menu')
+    } else if (process.platform === 'win32') {
+      win.setAlwaysOnTop(true, 'screen-saver')
+    } else {
+      win.setAlwaysOnTop(true)
+    }
+  } else {
+    elevatePanelAbovePet(win)
+  }
   if (!win.isVisible()) win.show()
   win.focus()
 }
@@ -336,7 +346,7 @@ export function createPetWindow(): BrowserWindow {
 
 export function createOnboardingWindow(): BrowserWindow {
   if (onboardingWindow && !onboardingWindow.isDestroyed()) {
-    presentPanelWindow(onboardingWindow)
+    presentPanelWindow(onboardingWindow, 'flow')
     return onboardingWindow
   }
 
@@ -358,8 +368,17 @@ export function createOnboardingWindow(): BrowserWindow {
   })
 
   loadWindowContent(onboardingWindow, 'onboarding')
-  onboardingWindow.once('ready-to-show', () => onboardingWindow?.show())
+  const showOnboarding = (): void => {
+    if (onboardingWindow && !onboardingWindow.isDestroyed()) {
+      presentPanelWindow(onboardingWindow, 'flow')
+    }
+  }
+  onboardingWindow.once('ready-to-show', showOnboarding)
+  setTimeout(showOnboarding, 1200)
   onboardingWindow.on('closed', () => {
+    if (onboardingWindow && !onboardingWindow.isDestroyed()) {
+      onboardingWindow.setAlwaysOnTop(false)
+    }
     onboardingWindow = null
   })
   return onboardingWindow

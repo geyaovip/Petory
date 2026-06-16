@@ -9,5 +9,9 @@ export const PETS_COPY = {
     title: '删除图片',
     message: (name: string) => `确定删除「${name || '未命名'}」的图片文件？`,
     confirm: '删除'
+  },
+  pendingFinalize: {
+    banner: '这只桌宠已生成完成，还差最后一步命名即可住进桌面。',
+    action: '完成创建'
   }
 } as const
