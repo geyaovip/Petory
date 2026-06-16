@@ -25,6 +25,7 @@ mac:
   icon: build/icon.icns
   target:
     - dmg
+    - zip
   artifactName: Petory-${version}-${arch}.${ext}
   hardenedRuntime: true
   gatekeeperAssess: false

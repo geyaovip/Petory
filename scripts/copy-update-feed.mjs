@@ -27,10 +27,7 @@ for (const file of fs.readdirSync(releaseDir)) {
       /url:\s+(?!https?:\/\/)(\S+\.(?:dmg|exe|zip))/g,
       `url: ${assetBaseUrl}/$1`
     )
-    content = content.replace(
-      /^path:\s+(?!https?:\/\/)(\S+\.(?:dmg|exe|zip))\s*$/gm,
-      `path: ${assetBaseUrl}/$1`
-    )
+    // Keep `path` as the artifact file name — electron-updater expects a zip name on macOS.
     fs.writeFileSync(path.join(outDir, file), content, 'utf8')
     console.log(`Copied ${file} → website/releases/`)
     copied++

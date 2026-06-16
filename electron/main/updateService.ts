@@ -103,6 +103,13 @@ export async function downloadUpdate(): Promise<UpdateState> {
     return getUpdateState()
   }
 
+  if (state.status !== 'available') {
+    return getUpdateState()
+  }
+
+  state = { status: 'downloading', version: state.version, progress: 0 }
+  broadcast()
+
   try {
     await autoUpdater.downloadUpdate()
   } catch (error) {

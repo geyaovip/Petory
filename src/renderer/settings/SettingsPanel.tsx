@@ -14,7 +14,6 @@ import type { SedentaryInterval, UserSettings } from '@shared/types/settings'
 import type { UpdateState } from '@shared/types/update'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { Input } from '../components/ui/Input'
 import { PreferenceGroup, PreferenceRow } from '../components/ui/PreferenceGroup'
 import { Pill } from '../components/ui/Pill'
 import { StatusBanner, type StatusVariant } from '../components/ui/StatusBanner'
@@ -37,7 +36,7 @@ const TAB_COPY: Record<SettingsTab, { title: string; subtitle: string }> = {
   pet: { title: '桌宠', subtitle: '自定义桌宠在桌面上的行为与外观。' },
   reminders: { title: '提醒', subtitle: '控制久坐与专注结束时的通知。' },
   privacy: { title: '隐私与数据', subtitle: '管理本地数据、聊天记录和隐私选项。' },
-  advanced: { title: '高级', subtitle: '服务地址、应用更新与维护操作。' }
+  advanced: { title: '高级', subtitle: '应用更新与维护操作。' }
 }
 
 function Segment<T extends string>({
@@ -75,7 +74,6 @@ export function SettingsPanel(): ReactElement {
   const [activePet, setActivePet] = useState<Pet | null>(null)
   const [activePersonality, setActivePersonality] = useState<PetPersonality | null>(null)
   const [authState, setAuthState] = useState<AuthState | null>(null)
-  const [apiBaseUrlDraft, setApiBaseUrlDraft] = useState('')
   const [updateState, setUpdateState] = useState<UpdateState | null>(null)
   const [poseStatus, setPoseStatus] = useState<PoseCompletionStatus | null>(null)
   const [status, setStatus] = useState<{ message: string; variant: StatusVariant } | null>(null)
@@ -92,7 +90,6 @@ export function SettingsPanel(): ReactElement {
       window.petory.pet.getPoseCompletionStatus()
     ])
     setSettings(nextSettings)
-    setApiBaseUrlDraft(nextSettings.apiBaseUrl)
     setVersion(nextVersion)
     setActivePet(pet)
     setActivePersonality(pet?.personality ?? null)
@@ -305,38 +302,54 @@ export function SettingsPanel(): ReactElement {
 
           {tab === 'advanced' ? (
             <div className="max-w-[760px] space-y-8">
-              <PreferenceGroup title="服务">
-                <PreferenceRow title="API 服务地址" description="留空时使用 Petory 默认服务。">
-                  <div className="flex w-[420px] gap-2">
-                    <Input
-                      value={apiBaseUrlDraft}
-                      placeholder="使用默认服务"
-                      onChange={(event) => setApiBaseUrlDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') event.currentTarget.blur()
-                      }}
-                    />
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={apiBaseUrlDraft.trim() === settings.apiBaseUrl}
-                      onClick={() => {
-                        const apiBaseUrl = apiBaseUrlDraft.trim()
-                        setApiBaseUrlDraft(apiBaseUrl)
-                        void save({ apiBaseUrl }).then(() => showStatus('服务地址已保存'))
-                      }}
-                    >
-                      保存
-                    </Button>
-                  </div>
-                </PreferenceRow>
-              </PreferenceGroup>
               <PreferenceGroup title="应用维护">
                 <PreferenceRow title="当前版本" description={`Petory v${version}`}>
-                  <Button size="sm" variant="secondary" onClick={() => void window.petory.update.check().then(setUpdateState)}>检查更新</Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={updateState?.status === 'checking' || updateState?.status === 'downloading'}
+                    onClick={() => void window.petory.update.check().then(setUpdateState)}
+                  >
+                    {updateState?.status === 'checking' ? '检查中…' : '检查更新'}
+                  </Button>
                 </PreferenceRow>
-                {updateState?.status === 'available' ? <PreferenceRow title={`发现新版本 ${updateState.version}`}><Button size="sm" onClick={() => void window.petory.update.download().then(setUpdateState)}>下载更新</Button></PreferenceRow> : null}
-                {updateState?.status === 'ready' ? <PreferenceRow title="更新已准备好"><Button size="sm" onClick={() => window.petory.update.install()}>安装并重启</Button></PreferenceRow> : null}
+                {updateState?.status === 'available' ? (
+                  <PreferenceRow title={`发现新版本 ${updateState.version}`}>
+                    <Button
+                      size="sm"
+                      onClick={() => void window.petory.update.download().then(setUpdateState)}
+                    >
+                      下载更新
+                    </Button>
+                  </PreferenceRow>
+                ) : null}
+                {updateState?.status === 'downloading' ? (
+                  <PreferenceRow
+                    title={`正在下载 ${updateState.version ?? ''}`}
+                    description={
+                      updateState.progress
+                        ? `已完成 ${Math.round(updateState.progress)}%`
+                        : '请保持网络连接，下载完成后可安装。'
+                    }
+                  >
+                    <span className="text-[12px] text-petory-text-tertiary">下载中…</span>
+                  </PreferenceRow>
+                ) : null}
+                {updateState?.status === 'ready' ? (
+                  <PreferenceRow title="更新已准备好" description="安装后应用会自动重启。">
+                    <Button size="sm" onClick={() => window.petory.update.install()}>安装并重启</Button>
+                  </PreferenceRow>
+                ) : null}
+                {updateState?.status === 'not-available' ? (
+                  <PreferenceRow title="已是最新版本" description={updateState.message ?? '当前没有可用更新。'} />
+                ) : null}
+                {updateState?.status === 'error' ? (
+                  <PreferenceRow title="更新失败" description={updateState.message ?? '请稍后再试，或从官网下载安装包。'}>
+                    <Button size="sm" variant="secondary" onClick={() => window.petory.app.openDownloadPage()}>
+                      打开下载页
+                    </Button>
+                  </PreferenceRow>
+                ) : null}
                 <PreferenceRow title="新手引导"><Button size="sm" variant="secondary" onClick={() => window.petory.guide.open()}>重新查看</Button></PreferenceRow>
                 <PreferenceRow title="Petory 官网"><Button size="sm" variant="secondary" onClick={() => window.petory.app.openWebsite()}>打开官网</Button></PreferenceRow>
                 {poseStatus?.pending.length ? <PreferenceRow title="补全桌宠姿势" description={`${poseStatus.pending.length} 只宠物尚未生成完整六姿势`}><Button size="sm" variant="secondary" onClick={() => void window.petory.pet.completePoses().then(() => void load())}>开始补全</Button></PreferenceRow> : null}
