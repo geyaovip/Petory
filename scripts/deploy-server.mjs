@@ -54,7 +54,9 @@ if (!skipEnv) {
 }
 
 if (envOnly) {
-  console.log('\n✓ Env synced (--env-only, skipped pull/rebuild)')
+  step('Recreate API container (reload .env)')
+  ssh(`cd ${remotePath} && docker compose -f ${composeFile} up -d api`)
+  console.log('\n✓ Env synced and API restarted')
   process.exit(0)
 }
 
