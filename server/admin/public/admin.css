@@ -328,28 +328,38 @@ body {
   margin-bottom: 6px;
 }
 
+.config-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .config-help-btn {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: #f5f4f1;
   color: var(--text-tertiary);
-  font-size: 12px;
-  line-height: 1;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 16px;
   padding: 0;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .config-help-btn:hover {
   color: var(--text-secondary);
   border-color: var(--border-strong);
-  background: #fdfcfb;
+  background: #fbfaf7;
 }
 
 .config-help-popover {
   position: absolute;
-  left: 0;
+  right: 0;
   top: calc(100% + 6px);
   z-index: 5;
   max-width: 320px;

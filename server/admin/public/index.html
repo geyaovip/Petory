@@ -346,8 +346,10 @@
             const label = maps.CONFIG_LABEL[f.key] || f.key
             const hint = maps.CONFIG_HINT[f.key]
             const hintHtml = hint
-              ? `<button type="button" class="config-help-btn" aria-label="说明" data-help="${esc(f.key)}">?</button>
-                 <span class="config-help-popover hidden" data-help-popover="${esc(f.key)}">${esc(hint)}</span>`
+              ? `<span class="config-help">
+                   <button type="button" class="config-help-btn" aria-label="说明" data-help="${esc(f.key)}">i</button>
+                   <span class="config-help-popover hidden" data-help-popover="${esc(f.key)}">${esc(hint)}</span>
+                 </span>`
               : ''
             const val = f.transform === 'msToSec' ? Math.round(Number(raw || 0) / 1000) : raw
             return `<label class="config-number-field">
