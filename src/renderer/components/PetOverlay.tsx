@@ -217,14 +217,7 @@ export function PetOverlay({ petId }: PetOverlayProps): ReactElement {
             </span>
           ) : null}
         </div>
-        {!isPrimary && petName ? (
-          <span
-            data-pet-hit
-            className="mt-1 cursor-pointer rounded-full bg-black/10 px-2 py-0.5 text-[10px] text-petory-text-secondary"
-          >
-            {petName}
-          </span>
-        ) : null}
+        {null}
       </div>
     </div>
   )
