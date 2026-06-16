@@ -57,7 +57,7 @@ import {
 } from './desktopPetService'
 import { consumeOnboardingIntent, setOnboardingIntent } from './onboardingIntent'
 import { findPetAwaitingFinalize, syncPetStatusFromDisk } from './petRecovery'
-import { importCloudBatch, listRecoverableCloudBatches } from './cloudPetRecovery'
+import { importCloudBatch, listRecoverableCloudBatches, syncCloudGeneratedPets } from './cloudPetRecovery'
 import { saveUpload, validateUpload } from './upload'
 import { getGrowthStats, handleDailyOpenRewards } from './growthService'
 import { endPomodoro, getPomodoroState, pausePomodoro, resumePomodoro, startPomodoro } from './pomodoroService'
@@ -585,7 +585,10 @@ function registerIpc(): void {
 
   ipcMain.on(IPC.pets.open, () => openPetsWindow())
   ipcMain.on(IPC.pets.close, () => closePetsWindow())
-  ipcMain.handle(IPC.pets.list, () => listManagedPets())
+  ipcMain.handle(IPC.pets.list, async () => {
+    await syncCloudGeneratedPets()
+    return listManagedPets()
+  })
   ipcMain.handle(IPC.pets.listRecoverableCloud, () => listRecoverableCloudBatches())
   ipcMain.handle(IPC.pets.importCloudBatch, async (_event, batchId: string) => {
     const result = await importCloudBatch(batchId)
@@ -738,7 +741,16 @@ function registerChatShortcut(): void {
 }
 
 function bootstrapMainApp(): void {
+  void runBootstrapMainApp()
+}
+
+async function runBootstrapMainApp(): Promise<void> {
   refreshInstalledSamplePets()
+  if (syncPetStatusFromDisk()) {
+    broadcastPetsListChanged()
+  }
+
+  await syncCloudGeneratedPets()
   if (syncPetStatusFromDisk()) {
     broadcastPetsListChanged()
   }
@@ -803,7 +815,7 @@ async function bootstrapOnLaunch(): Promise<void> {
     createAuthWindow()
     return
   }
-  bootstrapMainApp()
+  await runBootstrapMainApp()
 }
 
 function applyAppIcon(): void {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react'
 import { PETS_COPY } from '@shared/copy/pets'
 import { PERSONALITIES } from '@shared/constants'
-import type { DesktopPetStatus, Pet, PetPersonality, RecoverableCloudBatch } from '@shared/types/pet'
+import type { DesktopPetStatus, Pet, PetPersonality } from '@shared/types/pet'
 import { Check, PencilSimple, X } from '@phosphor-icons/react'
 import { Button } from '../components/ui/Button'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
@@ -29,8 +29,6 @@ export function PetManagerPanel(): ReactElement {
     petId: string
     name: string
   } | null>(null)
-  const [recoverableBatches, setRecoverableBatches] = useState<RecoverableCloudBatch[]>([])
-  const [importingCloud, setImportingCloud] = useState(false)
 
   const needsFinalize = (pet: Pet): boolean =>
     !pet.isSample && pet.status === 'generated' && !pet.name.trim() && Boolean(pet.imagePetPath)
@@ -40,13 +38,11 @@ export function PetManagerPanel(): ReactElement {
 
   const load = useCallback(async () => {
     try {
-      const [list, nextDesktopStatus, recoverable] = await Promise.all([
+      const [list, nextDesktopStatus] = await Promise.all([
         window.petory.pets.list(),
-        window.petory.desktop.getStatus(),
-        window.petory.pets.listRecoverableCloud()
+        window.petory.desktop.getStatus()
       ])
       setPets(list)
-      setRecoverableBatches(recoverable)
       setDesktopStatus(nextDesktopStatus)
       setSelectedPetId((current) => {
         if (current && list.some((pet) => pet.id === current)) return current
@@ -82,23 +78,6 @@ export function PetManagerPanel(): ReactElement {
   }, [load])
 
   const selectedPet = useMemo(() => pets.find((pet) => pet.id === selectedPetId) ?? null, [pets, selectedPetId])
-
-  const importLatestCloudBatch = async (): Promise<void> => {
-    const batch = recoverableBatches[0]
-    if (!batch || importingCloud) return
-    setImportingCloud(true)
-    try {
-      const result = await window.petory.pets.importCloudBatch(batch.batchId)
-      if (!result.success) {
-        showStatus(result.message, true)
-        return
-      }
-      showStatus('已导入云端桌宠，请继续完成命名')
-      await load()
-    } finally {
-      setImportingCloud(false)
-    }
-  }
 
   const showStatus = (message: string, error = false): void => {
     setStatus({ message, error })
@@ -173,16 +152,6 @@ export function PetManagerPanel(): ReactElement {
         />
         {status ? (
         <StatusBanner className="mx-5 mt-4" message={status.message} variant={status.error ? 'error' : 'success'} />
-        ) : null}
-        {recoverableBatches.length > 0 ? (
-          <div className="mx-5 mt-4 flex items-center justify-between gap-4 rounded-2xl border border-petory-border bg-petory-surface px-4 py-3">
-            <p className="text-[13px] text-petory-text-secondary">
-              {PETS_COPY.cloudRecoverable.banner(recoverableBatches.length)}
-            </p>
-            <Button disabled={importingCloud} size="sm" onClick={() => void importLatestCloudBatch()}>
-              {importingCloud ? PETS_COPY.cloudRecoverable.importing : PETS_COPY.cloudRecoverable.action}
-            </Button>
-          </div>
         ) : null}
 
       {pets.length === 0 ? (

@@ -166,6 +166,9 @@ async function generatePoseBatch(
     if (batch.success === false || !batch.jobs?.length) {
       throw mapBatchFailure(batch.message, batch.code)
     }
+    if (batch.batchId) {
+      updatePet(petId, { cloudBatchId: batch.batchId })
+    }
     return processRemoteJobs(pet, petId, batch.jobs, existingPaths, progressOffset, progressTotal)
   }
 

@@ -9,7 +9,6 @@ import { hasUploadReference } from './image/referencePath'
 import {
   createDraftPet,
   ensurePetDirs,
-  getPetById,
   loadStore,
   updatePet
 } from './petStore'
@@ -20,6 +19,18 @@ function listImportedCloudBatchIds(): Set<string> {
       .pets.map((pet) => pet.cloudBatchId)
       .filter((batchId): batchId is string => Boolean(batchId))
   )
+}
+
+function findDraftPetForCloudImport(): Pet | null {
+  const drafts = loadStore().pets.filter(
+    (pet) =>
+      !pet.isSample &&
+      !pet.imagePetPath &&
+      !pet.cloudBatchId &&
+      pet.status === 'draft' &&
+      hasUploadReference(pet)
+  )
+  return drafts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null
 }
 
 function toRecoverableBatch(batch: ServerBatchResponse): RecoverableCloudBatch | null {
@@ -33,6 +44,26 @@ function toRecoverableBatch(batch: ServerBatchResponse): RecoverableCloudBatch |
     posesTotal: batch.posesTotal,
     previewUrl: idleJob.rawOutputUrl
   }
+}
+
+async function syncPetsWithPendingCloudBatch(): Promise<boolean> {
+  const pending = loadStore().pets.filter(
+    (pet) => !pet.isSample && pet.cloudBatchId && !pet.imagePetPath
+  )
+  if (pending.length === 0) return false
+
+  let changed = false
+  for (const pet of pending) {
+    try {
+      const batch = await apiFetch<ServerBatchResponse>(`/api/generation/batch/${pet.cloudBatchId}`)
+      if (batch.status !== 'succeeded') continue
+      const result = await applyRemoteBatchToPet(pet.id, batch.jobs)
+      if (result.success) changed = true
+    } catch (error) {
+      console.warn(`[petory] failed to sync pending cloud batch for pet ${pet.id}:`, error)
+    }
+  }
+  return changed
 }
 
 export async function listRecoverableCloudBatches(): Promise<RecoverableCloudBatch[]> {
@@ -53,11 +84,11 @@ export async function listRecoverableCloudBatches(): Promise<RecoverableCloudBat
 
 export async function importCloudBatch(batchId: string): Promise<ImportCloudBatchResult> {
   if (!isAuthenticated()) {
-    return { success: false, message: '请先登录后再导入。' }
+    return { success: false, message: '请先登录后再同步。' }
   }
 
   const existing = loadStore().pets.find((pet) => pet.cloudBatchId === batchId)
-  if (existing) {
+  if (existing?.imagePetPath) {
     return { success: true, petId: existing.id }
   }
 
@@ -72,13 +103,16 @@ export async function importCloudBatch(batchId: string): Promise<ImportCloudBatc
   }
 
   if (batch.status !== 'succeeded') {
-    return { success: false, message: '该批次尚未生成完成，暂时无法导入。' }
+    return { success: false, message: '该批次尚未生成完成，暂时无法同步。' }
   }
 
-  const pet = createDraftPet({ imageOriginalPath: '', imageCompressedPath: '' })
+  const reuseDraft = existing ?? findDraftPetForCloudImport()
+  const pet = reuseDraft
+    ? reuseDraft
+    : createDraftPet({ imageOriginalPath: '', imageCompressedPath: '' })
   const { sourceDir } = ensurePetDirs(pet.id)
 
-  if (batch.inputImageUrl) {
+  if (!hasUploadReference(pet) && batch.inputImageUrl) {
     const sourcePath = path.join(sourceDir, 'upload.png')
     try {
       await downloadImage(batch.inputImageUrl, sourcePath)
@@ -98,6 +132,25 @@ export async function importCloudBatch(batchId: string): Promise<ImportCloudBatc
 
   updatePet(pet.id, { cloudBatchId: batchId })
   return { success: true, petId: pet.id }
+}
+
+/** Pull succeeded cloud batches into the local pets list without user action. */
+export async function syncCloudGeneratedPets(): Promise<string | null> {
+  if (!isAuthenticated()) return null
+
+  let changed = await syncPetsWithPendingCloudBatch()
+  const recoverable = await listRecoverableCloudBatches()
+  if (recoverable.length === 0) {
+    return changed ? 'synced' : null
+  }
+
+  const result = await importCloudBatch(recoverable[0].batchId)
+  if (result.success) {
+    return result.petId
+  }
+
+  console.warn('[petory] auto cloud pet sync failed:', result.message)
+  return changed ? 'synced' : null
 }
 
 export function isManagedPetCandidate(pet: Pet): boolean {

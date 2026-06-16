@@ -17,13 +17,5 @@ export const PETS_COPY = {
   pendingResume: {
     banner: '这只桌宠已上传照片，但生成尚未完成。',
     action: '继续生成'
-  },
-  cloudRecoverable: {
-    banner: (count: number) =>
-      count === 1
-        ? '发现 1 个已在云端生成完成的桌宠，可导入后继续命名。'
-        : `发现 ${count} 个已在云端生成完成的桌宠，可导入后继续命名。`,
-    action: '导入并完成创建',
-    importing: '正在导入…'
   }
 } as const
