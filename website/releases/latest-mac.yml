@@ -1,8 +1,11 @@
-version: 2.4.10
+version: 2.4.11
 files:
-  - url: https://github.com/geyaovip/petory/releases/download/v2.4.10/Petory-2.4.10-universal.dmg
-    sha512: Ncwif1zi3Se1nop0Fd+X0VOY8zItWrUCSAMThSvCZmIEl/S2BOZUuIfUQpZCPZPPISV8qDeN61w5N7fHstPfyQ==
-    size: 197680216
-path: https://github.com/geyaovip/petory/releases/download/v2.4.10/Petory-2.4.10-universal.dmg
-sha512: Ncwif1zi3Se1nop0Fd+X0VOY8zItWrUCSAMThSvCZmIEl/S2BOZUuIfUQpZCPZPPISV8qDeN61w5N7fHstPfyQ==
-releaseDate: '2026-06-15T11:20:03.324Z'
+  - url: https://github.com/geyaovip/petory/releases/download/v2.4.11/Petory-2.4.11-universal.zip
+    sha512: eXPyu8vGEI2f5e7NnV/+32+H9dCDXB1dqOPX6TBjXgYMEaIFG9D72emekT+jlYXQVWcLmf/3o+oKU9cmh0iB0A==
+    size: 190274186
+  - url: https://github.com/geyaovip/petory/releases/download/v2.4.11/Petory-2.4.11-universal.dmg
+    sha512: gh5crdqY1LfIoYRm2i8B9grJYvK6G4oGomkncbkVoBqe7You+4fcItI2+0XNtibOeG8Giju2WNJfX7Y/R/fuIA==
+    size: 197672033
+path: Petory-2.4.11-universal.zip
+sha512: eXPyu8vGEI2f5e7NnV/+32+H9dCDXB1dqOPX6TBjXgYMEaIFG9D72emekT+jlYXQVWcLmf/3o+oKU9cmh0iB0A==
+releaseDate: '2026-06-16T02:36:45.014Z'
