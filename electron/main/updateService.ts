@@ -7,6 +7,8 @@ import { IPC } from '../../src/shared/ipc'
 import type { UpdateState } from '../../src/shared/types/update'
 
 let state: UpdateState = { status: 'idle' }
+let pendingCheck: Promise<UpdateState> | null = null
+let checkSeq = 0
 
 function broadcast(): void {
   const payload = { ...state }
@@ -21,6 +23,21 @@ export function getUpdateState(): UpdateState {
   return { ...state }
 }
 
+function applyCheckResult(result: Awaited<ReturnType<typeof autoUpdater.checkForUpdates>>): void {
+  if (!result) return
+
+  if (result.isUpdateAvailable) {
+    state = { status: 'available', version: result.updateInfo.version }
+  } else {
+    state = {
+      status: 'not-available',
+      version: result.updateInfo.version || app.getVersion(),
+      message: '已是最新版本'
+    }
+  }
+  broadcast()
+}
+
 export function initAutoUpdater(): void {
   if (!app.isPackaged) {
     state = { status: 'idle', message: '开发模式不检查更新' }
@@ -32,25 +49,6 @@ export function initAutoUpdater(): void {
 
   autoUpdater.autoDownload = false
   autoUpdater.autoInstallOnAppQuit = true
-
-  autoUpdater.on('checking-for-update', () => {
-    state = { status: 'checking' }
-    broadcast()
-  })
-
-  autoUpdater.on('update-available', (info) => {
-    state = { status: 'available', version: info.version }
-    broadcast()
-  })
-
-  autoUpdater.on('update-not-available', (info) => {
-    state = {
-      status: 'not-available',
-      version: info.version,
-      message: '已是最新版本'
-    }
-    broadcast()
-  })
 
   autoUpdater.on('error', (error) => {
     state = {
@@ -79,15 +77,22 @@ export function initAutoUpdater(): void {
   }, 8000)
 }
 
-export async function checkForUpdates(): Promise<UpdateState> {
+async function runCheckForUpdates(): Promise<UpdateState> {
   if (!app.isPackaged) {
     state = { status: 'idle', message: '开发模式不检查更新' }
     return state
   }
 
+  const seq = ++checkSeq
+  state = { status: 'checking' }
+  broadcast()
+
   try {
-    await autoUpdater.checkForUpdates()
+    const result = await autoUpdater.checkForUpdates()
+    if (seq !== checkSeq) return getUpdateState()
+    applyCheckResult(result)
   } catch (error) {
+    if (seq !== checkSeq) return getUpdateState()
     state = {
       status: 'error',
       message: error instanceof Error ? error.message : '检查更新失败'
@@ -96,6 +101,15 @@ export async function checkForUpdates(): Promise<UpdateState> {
   }
 
   return getUpdateState()
+}
+
+export function checkForUpdates(): Promise<UpdateState> {
+  if (!pendingCheck) {
+    pendingCheck = runCheckForUpdates().finally(() => {
+      pendingCheck = null
+    })
+  }
+  return pendingCheck
 }
 
 export async function downloadUpdate(): Promise<UpdateState> {

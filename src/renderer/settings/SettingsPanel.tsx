@@ -308,7 +308,7 @@ export function SettingsPanel(): ReactElement {
                     size="sm"
                     variant="secondary"
                     disabled={updateState?.status === 'checking' || updateState?.status === 'downloading'}
-                    onClick={() => void window.petory.update.check().then(setUpdateState)}
+                    onClick={() => void window.petory.update.check()}
                   >
                     {updateState?.status === 'checking' ? '检查中…' : '检查更新'}
                   </Button>
@@ -317,7 +317,7 @@ export function SettingsPanel(): ReactElement {
                   <PreferenceRow title={`发现新版本 ${updateState.version}`}>
                     <Button
                       size="sm"
-                      onClick={() => void window.petory.update.download().then(setUpdateState)}
+                      onClick={() => void window.petory.update.download()}
                     >
                       下载更新
                     </Button>
@@ -341,7 +341,9 @@ export function SettingsPanel(): ReactElement {
                   </PreferenceRow>
                 ) : null}
                 {updateState?.status === 'not-available' ? (
-                  <PreferenceRow title="已是最新版本" description={updateState.message ?? '当前没有可用更新。'} />
+                  <PreferenceRow title="已是最新版本" description={updateState.message ?? '当前没有可用更新。'}>
+                    <span className="text-[12px] text-petory-text-tertiary">—</span>
+                  </PreferenceRow>
                 ) : null}
                 {updateState?.status === 'error' ? (
                   <PreferenceRow title="更新失败" description={updateState.message ?? '请稍后再试，或从官网下载安装包。'}>
