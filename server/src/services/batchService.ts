@@ -17,6 +17,8 @@ import {
   type BatchJobType
 } from './generationService.js'
 import { assertDeviceAllowed } from './deviceGuardService.js'
+import { reserveCustomPetSlot } from './customPetService.js'
+import { CUSTOM_PET_LIMIT_MESSAGE } from '../../../src/shared/entitlements.js'
 import { saveBatchInputImage, saveBatchPoseOutput, toPublicUrl } from './storageService.js'
 
 const ALLOWED_MIME = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp'])
@@ -94,6 +96,17 @@ export async function runGenerationBatch(user: User, input: BatchInput) {
 
   const poseCheck = validatePoses(user, input.poses)
   if (!poseCheck.ok) return poseCheck
+
+  if (input.jobType === 'full_batch') {
+    const slotCheck = await reserveCustomPetSlot(user.id)
+    if (!slotCheck.ok) return slotCheck
+  } else if (input.jobType === 'pose_completion') {
+    return {
+      success: false as const,
+      code: 'CUSTOM_PET_LIMIT',
+      message: CUSTOM_PET_LIMIT_MESSAGE
+    }
+  }
 
   const imageApiCheck = assertImageApiConfigured()
   if (!imageApiCheck.ok) {

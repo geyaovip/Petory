@@ -4,6 +4,7 @@ import { seedFromString } from '../../../src/shared/generation/reference.js'
 import type { PetPoseType, PetStyleType } from '../../../src/shared/types/pet.js'
 import { prisma } from '../lib/prisma.js'
 import { assertDeviceAllowed } from './deviceGuardService.js'
+import { reserveCustomPetSlot, assertCanRegenerateCustomPet } from './customPetService.js'
 import { assertGenerationEnabled } from './systemConfigService.js'
 import { generateImage, assertImageApiConfigured } from './seedreamService.js'
 import {
@@ -47,6 +48,9 @@ export async function createSinglePoseRegen(
 
   const deviceCheck = await assertDeviceAllowed(user.id, input.deviceId)
   if (!deviceCheck.ok) return deviceCheck
+
+  const regenCheck = await assertCanRegenerateCustomPet(user)
+  if (!regenCheck.ok) return regenCheck
 
   if (!ALLOWED_MIME.has(input.mimeType)) {
     return { success: false as const, code: 'UPLOAD_INVALID', message: '不支持的图片格式。' }
@@ -120,7 +124,10 @@ export async function logClientLocalBatch(
     clientPetId?: string
     previews?: Partial<Record<PetPoseType, Buffer>>
   }
-) {
+): Promise<{ ok: true } | { ok: false; code: string; message: string }> {
+  const slotCheck = await reserveCustomPetSlot(user.id)
+  if (!slotCheck.ok) return slotCheck
+
   const batch = await prisma.generationBatch.create({
     data: {
       userId: user.id,
@@ -151,7 +158,7 @@ export async function logClientLocalBatch(
     })
   }
 
-  return batch
+  return { ok: true as const }
 }
 
 export function serializeJob(job: {

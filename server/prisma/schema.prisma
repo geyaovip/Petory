@@ -14,10 +14,11 @@ model User {
   displayName  String
   status       String    @default("active")
   plan         String    @default("free")
-  proExpiresAt DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  lastLoginAt  DateTime?
+  proExpiresAt         DateTime?
+  customPetCreatedAt   DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  lastLoginAt          DateTime?
 
   devices    Device[]
   batches    GenerationBatch[]

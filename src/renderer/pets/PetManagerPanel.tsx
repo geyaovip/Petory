@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react'
 import { PETS_COPY } from '@shared/copy/pets'
 import { PERSONALITIES } from '@shared/constants'
+import type { AuthState } from '@shared/types/auth'
 import type { DesktopPetStatus, Pet, PetPersonality } from '@shared/types/pet'
 import { Check, PencilSimple, X } from '@phosphor-icons/react'
 import { Button } from '../components/ui/Button'
@@ -29,6 +30,9 @@ export function PetManagerPanel(): ReactElement {
     petId: string
     name: string
   } | null>(null)
+  const [authState, setAuthState] = useState<AuthState | null>(null)
+
+  const canCreateCustomPet = authState?.canCreateCustomPet !== false
 
   const needsFinalize = (pet: Pet): boolean =>
     !pet.isSample && pet.status === 'generated' && !pet.name.trim() && Boolean(pet.imagePetPath)
@@ -76,6 +80,11 @@ export function PetManagerPanel(): ReactElement {
     void load()
     return window.petory.pets.onListChanged(() => void load())
   }, [load])
+
+  useEffect(() => {
+    void window.petory.auth.getState().then(setAuthState)
+    return window.petory.auth.onStateChanged(setAuthState)
+  }, [])
 
   const selectedPet = useMemo(() => pets.find((pet) => pet.id === selectedPetId) ?? null, [pets, selectedPetId])
 
@@ -160,11 +169,14 @@ export function PetManagerPanel(): ReactElement {
             title={PETS_COPY.empty.title}
             description={PETS_COPY.empty.description}
             actionLabel={PETS_COPY.empty.action}
-            onAction={() =>
-              window.petory.pet.openOnboarding({
-                mode: 'new',
-                returnTo: 'pets'
-              })
+            onAction={
+              canCreateCustomPet
+                ? () =>
+                    window.petory.pet.openOnboarding({
+                      mode: 'new',
+                      returnTo: 'pets'
+                    })
+                : undefined
             }
           />
         </div>
@@ -213,18 +225,20 @@ export function PetManagerPanel(): ReactElement {
                 )
               })}
             </ul>
-            <Button
-              className="mt-3"
-              fullWidth
-              onClick={() =>
-                window.petory.pet.openOnboarding({
-                  mode: 'new',
-                  returnTo: 'pets'
-                })
-              }
-            >
-              新建宠物
-            </Button>
+            {canCreateCustomPet ? (
+              <Button
+                className="mt-3"
+                fullWidth
+                onClick={() =>
+                  window.petory.pet.openOnboarding({
+                    mode: 'new',
+                    returnTo: 'pets'
+                  })
+                }
+              >
+                新建宠物
+              </Button>
+            ) : null}
           </aside>
 
           {selectedPet ? (
@@ -366,26 +380,6 @@ export function PetManagerPanel(): ReactElement {
                 </div>
               </section>
 
-              {!selectedPet.isSample && selectedPet.imageOriginalPath ? (
-                <section className="mt-7 border-t border-petory-border pt-6">
-                  <h3 className="text-[13px] font-semibold">重新生成</h3>
-                  <p className="mt-1 text-[12px] text-petory-text-tertiary">基于原照片重新生成完整六种姿势，不改变主体风格。</p>
-                  <Button
-                    className="mt-3"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      window.petory.pet.openOnboarding({
-                        mode: 'restyle',
-                        petId: selectedPet.id,
-                        returnTo: 'pets'
-                      })
-                    }
-                  >
-                    重新生成这只宠物
-                  </Button>
-                </section>
-              ) : null}
 
               <section className="mt-7 border-t border-petory-border pt-6">
                 <Button

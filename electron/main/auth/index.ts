@@ -16,6 +16,7 @@ export {
   canActivatePet,
   canCreatePet,
   canGeneratePet,
+  canRegenerateCustomPet,
   canSendChat,
   buildAuthState
 } from './entitlementService'

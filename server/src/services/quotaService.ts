@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js'
 import { todayKey } from '../lib/entitlements.js'
 import { getPlanGenerationLimit } from './systemConfigService.js'
 import { logQuotaBlocked } from './auditService.js'
+import { getCustomPetStatus } from './customPetService.js'
 import type { PlanTier } from '../../../src/shared/types/auth.js'
 
 export async function ensureQuota(user: User) {
@@ -41,13 +42,15 @@ export async function ensureQuota(user: User) {
 export async function getQuotaView(user: User) {
   const quota = await ensureQuota(user)
   const remaining = Math.max(0, quota.dailyLimit + quota.bonusQuota - quota.usedToday)
+  const customPet = await getCustomPetStatus(user.id)
   return {
     dailyLimit: quota.dailyLimit,
     usedToday: quota.usedToday,
     remainingToday: remaining,
     bonusQuota: quota.bonusQuota,
     totalUsed: quota.totalUsed,
-    isProUser: false
+    isProUser: false,
+    customPetCreated: customPet.customPetCreated
   }
 }
 

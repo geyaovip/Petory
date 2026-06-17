@@ -37,6 +37,7 @@ export interface AuthState {
   limits: EntitlementLimits
   remainingChat: number
   remainingGeneration: number
+  canCreateCustomPet?: boolean
   maintenanceNotice?: string | null
   useRemoteBackend?: boolean
   registrationOpen?: boolean

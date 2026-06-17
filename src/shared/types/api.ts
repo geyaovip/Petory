@@ -9,6 +9,7 @@ export interface ServerQuotaView {
   bonusQuota?: number
   totalUsed?: number
   isProUser?: boolean
+  customPetCreated?: boolean
 }
 
 export interface AppStatusResponse {

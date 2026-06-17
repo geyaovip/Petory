@@ -139,6 +139,11 @@ export async function syncCloudGeneratedPets(): Promise<string | null> {
   if (!isAuthenticated()) return null
 
   let changed = await syncPetsWithPendingCloudBatch()
+  const hasCustomPet = loadStore().pets.some((pet) => !pet.isSample && pet.imagePetPath)
+  if (hasCustomPet) {
+    return changed ? 'synced' : null
+  }
+
   const recoverable = await listRecoverableCloudBatches()
   if (recoverable.length === 0) {
     return changed ? 'synced' : null

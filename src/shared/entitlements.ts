@@ -1,5 +1,9 @@
 import type { EntitlementLimits, PlanTier } from './types/auth'
 
+/** One custom pet per account; deleting locally does not reset this limit. */
+export const CUSTOM_PET_LIMIT_MESSAGE =
+  '每个账号仅可创建一只自定义宠物，无法再次生成。'
+
 export const PLAN_LIMITS: Record<PlanTier, EntitlementLimits> = {
   free: {
     maxPets: 10,

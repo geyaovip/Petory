@@ -68,6 +68,10 @@ export function getRemoteRemainingChat(): number | null {
   return cache.chat?.remainingToday ?? null
 }
 
+export function isRemoteCustomPetCreated(): boolean {
+  return cache.generation?.customPetCreated === true
+}
+
 export function applyQuotaFromResponse(input: {
   quota?: ServerQuotaView
   chatQuota?: ServerQuotaView
