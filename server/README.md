@@ -27,6 +27,7 @@ npm run server:db:up
 cd server
 cp .env.example .env
 # 编辑 .env：JWT_SECRET、ARK_API_KEY、KIMI_API_KEY
+# 可选：ARK_IMAGE_MODEL（默认 doubao-seedream-4-5-251128）
 
 npm install
 npm run db:push
