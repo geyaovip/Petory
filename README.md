@@ -2,6 +2,8 @@
 
 Upload a photo, let it move into your computer.
 
+**官网：** https://petory.chat
+
 Petory is an AI desktop companion app. Users upload a photo, the app generates a desktop-ready pet, and the pet lives on screen with chat, pomodoro, reminders, and growth.
 
 ## What lives where

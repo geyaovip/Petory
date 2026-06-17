@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Petory — AI 桌面宠物，上传照片生成专属桌宠 | macOS &amp; Windows</title>
+    <title>Petory — AI 桌面宠物，上传照片生成专属桌宠 | petory.chat</title>
     <meta name="description" content="上传一张照片，生成会聊天、会陪伴的 AI 桌面宠物。支持 macOS 与 Windows，陪你专注、休息与日常互动。免费下载。" />
     <meta name="keywords" content="桌面宠物,桌宠,桌面陪伴,AI桌宠,macOS桌宠,Windows桌宠,上传照片生成桌宠" />
     <meta name="robots" content="index, follow" />
@@ -32,8 +32,11 @@
         "@graph": [
           {
             "@type": "Organization",
+            "@id": "https://petory.chat/#organization",
             "name": "Petory",
+            "alternateName": ["Petory 桌宠", "Petory AI Desktop Pet"],
             "url": "https://petory.chat/",
+            "sameAs": ["https://github.com/geyaovip/petory"],
             "logo": {
               "@type": "ImageObject",
               "url": "https://petory.chat/site-icon-192.png?v=10",
@@ -44,8 +47,10 @@
           {
             "@type": "WebSite",
             "name": "Petory",
+            "alternateName": "Petory 桌宠",
             "url": "https://petory.chat/",
-            "inLanguage": "zh-CN"
+            "inLanguage": "zh-CN",
+            "publisher": { "@id": "https://petory.chat/#organization" }
           },
           {
             "@type": "SoftwareApplication",
@@ -54,7 +59,7 @@
             "operatingSystem": "macOS, Windows",
             "description": "上传一张照片，生成会聊天、会陪伴的 AI 桌面宠物。支持专注计时、生活提醒与成长记录。",
             "url": "https://petory.chat/",
-            "downloadUrl": "https://petory.chat/download",
+            "downloadUrl": "https://petory.chat/download/",
             "image": "https://petory.chat/assets/og-share.png",
             "offers": {
               "@type": "Offer",
@@ -68,7 +73,7 @@
   </head>
   <body class="launch-home">
     <header class="launch-header launch-wrap">
-      <a class="launch-logo" href="index.html" aria-label="Petory 首页">
+      <a class="launch-logo" href="/" aria-label="Petory 首页">
         <img src="assets/logo.png?v=10" alt="Petory" width="819" height="325" />
       </a>
       <a class="launch-header-cta" href="/download/">免费下载</a>
@@ -161,6 +166,6 @@
       </section>
     </main>
 
-    <footer class="launch-footer launch-wrap"><p>© 2026 Petory</p><div><a href="/features/">功能介绍</a><a href="/privacy/">隐私政策</a><a href="/terms/">用户协议</a><a href="/download/">下载</a></div></footer>
+    <footer class="launch-footer launch-wrap"><p>© 2026 Petory · <a href="https://petory.chat/">petory.chat</a></p><div><a href="/features/">功能介绍</a><a href="/privacy/">隐私政策</a><a href="/terms/">用户协议</a><a href="/download/">下载</a><a href="https://github.com/geyaovip/petory" rel="noopener noreferrer">GitHub</a></div></footer>
   </body>
 </html>
