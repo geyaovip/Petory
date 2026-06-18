@@ -114,19 +114,55 @@ petory: {
 
 MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 
-### 4.2 字号层级
+### 4.2 字号层级（通用 Token）
 
 | Token | Size | Weight | Line-height | 用途 |
 |-------|------|--------|-------------|------|
-| `display` | 28px | 600 | 1.3 | 欢迎页主标题 |
-| `h1` | 22px | 600 | 1.35 | 页面标题 |
-| `h2` | 18px | 600 | 1.4 | 区块标题 |
-| `body` | 15px | 400 | 1.5 | 正文 |
-| `body-sm` | 13px | 400 | 1.45 | 说明、辅助 |
-| `caption` | 12px | 400 | 1.4 | 标签、时间戳 |
-| `button` | 15px | 500 | 1 | 按钮文字 |
+| `display` | 26–28px | 600 | 1.25–1.3 | 欢迎页主标题 |
+| `h1` | 22–24px | 600 | 1.3–1.35 | 页面/流程主标题 |
+| `h2` | 18–21px | 600 | 1.35–1.4 | 区块标题、指南页步骤标题 |
+| `h3` | 13–16px | 600 | 1.4 | 面板内小节标题 |
+| `body` | 14–15px | 400 | 1.5–1.6 | 正文、表单输入 |
+| `body-sm` | 13px | 400 | 1.45–1.65 | 说明、副文案 |
+| `caption` | 11–12px | 400–600 | 1.4 | 标签、时间戳、列表元信息 |
+| `overline` | 11px | 600–800 | 1.2 | 全大写或字间距拉开的上标（官网 eyebrow / 侧栏分组） |
+| `button-md` | 14px | 600 | 1 | 客户端默认按钮 |
+| `button-sm` | 13px | 600 | 1 | 客户端紧凑按钮 |
 
-### 4.3 文案调性
+MVP **不加载外部 Web Font**；官网营销区标题可选用系统宋体族（`Songti SC` / `STSong`）作展示字，与客户端 UI 字体栈分离。
+
+### 4.3 客户端各页面字号
+
+实现以 `src/renderer/components/ui/` 与各 Panel 为准；下表为验收对照，不得随意另起字号。
+
+| 表面 | 主标题 | 正文/说明 | 辅助/元信息 | 备注 |
+|------|--------|-----------|-------------|------|
+| 引导 · 欢迎 | 26px / semibold | 13px / secondary | — | 单主 CTA |
+| 引导 · 结果/命名 | 22px / semibold | 13px / secondary | — | 宠物预览区居中 |
+| 面板顶栏 `PanelTitleBar` | 16px / semibold | 11px / tertiary（副标题） | — | 高 72px，标题居中 |
+| 宠物管理 · 列表项 | 13px / semibold（名称） | 11px / tertiary（状态） | 侧栏分组 11px uppercase | 预览区名 24px |
+| 宠物管理 · 区块标题 | 13px / semibold | 12px / tertiary（说明） | — | 性格 Pill 沿用全局 |
+| 设置 / 认证 | 13px / semibold（区块） | 12–13px / secondary | 11px / tertiary | 与 `SettingsPanel` 一致 |
+| 聊天输入区 | — | 14px 输入 | 11–12px 提示 | 发送按钮 `md` |
+| 专注 / 成长 | 20px 统计数字 | 13px / secondary | 11–12px / tertiary | 计时主数字更大由面板自定 |
+| 指南 `GuidePanel` | 21px / semibold | 14px / secondary | — | 分页脚栏 |
+| 确认弹窗 | 16px / semibold | 13px / secondary | — | 危险操作用 `danger` 按钮 |
+| 空状态 `EmptyState` | 15px / medium | 13px / secondary | — | 单 Primary 行动 |
+
+### 4.4 官网各页面字号
+
+样式定义在 `website/styles.css`；两类布局：**Launch 首页**（`.launch-*`）与 **内页壳**（`.home-*` / `.download-*` / `.features-*`）。
+
+| 表面 | 主标题 | 正文/说明 | 辅助/元信息 | 备注 |
+|------|--------|-----------|-------------|------|
+| 首页 Hero | `clamp(58px, 6vw, 86px)` | `.launch-lead` 16px | `.launch-tag` 11px；`.launch-trust` 12px | 展示字重偏高 |
+| 首页区块标题 | 36–44px | 12–13px / muted | 功能卡标签 11px | 部分标题用宋体族 |
+| 功能页 Hero | `clamp(54px, 6vw, 88px)` | 17px | `.home-eyebrow` 12px uppercase | 与下载页同壳 |
+| 下载页 Hero | 同功能页量级 | 17px + `strong` 强调 | 版本号 12–13px | 平台行标题 18–34px |
+| 法务正文 `.page-legal` | 页面 h1 按 legal 样式 | 14–15px 段落 | 更新时间 12px | max-width 720px |
+| 页脚 | — | — | 12px / `#928b85`–`#9b948e` | 链接 hover 加深 |
+
+### 4.5 文案调性
 
 - 用「你」不用「您」；语气亲切、简短
 - 错误提示说人话，不暴露技术名词（MiniMax、rembg、prompt、参考图）
@@ -187,24 +223,29 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 
 ## 6. 组件规范
 
-### 6.1 按钮
+### 6.1 按钮（客户端）
 
-**Primary（主操作）**
-- 背景 `primary`，文字白色，圆角 `radius-md`
-- 悬停 `primary-hover`；禁用 40% 透明度
-- 例：`创建我的桌宠`、`Use This Pet`
+实现：`src/renderer/components/ui/Button.tsx`。禁止在业务页面复制一套平行 class。
 
-**Secondary（次操作）**
-- 背景 `surface`，边框 `border`，文字 `text`
-- 悬停边框 `border-strong`，背景 `#F5F4F2`
+| 变体 | 背景/边框 | 文字 | 悬停 | 按下 |
+|------|-----------|------|------|------|
+| **Primary** | `primary` 底 + 同色边框 | 白色 | `primary-hover` 底/边框 | `translate-y-px`（disabled 不位移） |
+| **Secondary** | `surface` + `border` | `text` | `border-strong` + `muted` 底 | 同 Primary |
+| **Ghost** | 透明 | `text-secondary` | `muted` 底 + `text` | 同 Primary |
+| **Danger** | `error-soft` | `error` | `error-hover` 底 | `scale-[0.98]` |
 
-**Ghost（弱操作）**
-- 无边框，文字 `text-secondary`；悬停背景 `primary-soft`
+| 尺寸 | 高度 | 水平内边距 | 字号 | 圆角 | 用途 |
+|------|------|------------|------|------|------|
+| `md`（默认） | 44px (`h-11`) | 20px | 14px / semibold | 12px (`rounded-xl`) | 主流程、表单提交 |
+| `sm` | 36px (`h-9`) | 14px | 13px / semibold | 8px (`rounded-lg`) | 卡片内、宠物管理次要操作 |
 
-**Danger（删除数据）**
-- 文字 `error`；背景 `error-soft` 仅用于确认弹窗
+**焦点环：** `ring-2 ring-petory-primary ring-offset-2 ring-offset-petory-bg`（`focus-visible`）。
 
-按钮最小高度 **40px**；同一视觉区域最多 1 个 Primary。
+**禁用：** `opacity-40` + `cursor-not-allowed`；保持按钮宽度，避免布局跳动。
+
+**层级：** 同一视觉区域最多 **1 个 Primary**；删除等破坏性操作用 `danger` 或 Ghost + `ConfirmDialog`。
+
+**触控：** 客户端面板最小点击高度 **40px**（`md` 已满足）；图标按钮 36×36px 起，必须带 `aria-label`。
 
 ### 6.2 输入框
 
@@ -467,11 +508,14 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 
 ### 15.1 页面结构
 
-| 页面 | 用途 |
-|------|------|
-| `index.html` | 产品介绍、功能亮点、下载入口 |
-| `download.html` | 系统选择、安装包下载 |
-| `privacy.html` / `terms.html` | 法律文档 |
+| 页面 | 布局类 | 用途 |
+|------|--------|------|
+| `index.html` | `launch-home` | 产品介绍、功能亮点、下载 CTA |
+| `features/index.html` | `site-v3` + `home-shell` | 功能详解、SEO 落地 |
+| `download/index.html` | `download-page` + `home-shell` | 系统选择、安装包下载 |
+| `privacy/index.html` · `terms/index.html` | `page-legal` | 法律文档 |
+
+> 旧版四链顶栏导航（首页·下载·隐私·协议）**已废弃**；全站改为极简页眉 + 页脚链接，不在首屏堆叠横向导航。
 
 ### 15.2 文案规范
 
@@ -480,41 +524,94 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 - 版本号可从 `releases/latest.json` 动态读取，但旁注应为「检查更新」类用户语言
 - 功能描述与当前 MVP 一致；未上线能力不写进主文案（可写「即将推出」若 roadmap 需要）
 
-### 15.3 组件
+### 15.3 按钮（官网）
 
-- 按钮复用 `--primary` / `--surface` token，与客户端一致
+| 类名 | 高度 | 字号 | 圆角 | 用途 |
+|------|------|------|------|------|
+| `.launch-primary` | 54px（移动缩小） | 15px / 700 | 999px 药丸 | 首页 Hero / 底部主 CTA |
+| `.launch-header-cta` | 42px | 14px / 700 | 999px | 首页右上角「免费下载」 |
+| `.btn.btn-primary` | 44px | 15px / 600 | 12px | 通用主按钮（旧区块/兼容） |
+| `.btn.btn-secondary` | 44px | 15px / 600 | 12px | 白底描边次按钮 |
+| `.btn-disabled` | 同主按钮 | — | — | 透明度 0.55，`pointer-events: none` |
+| `.launch-platform-grid a` | 自适应 | 12px / 700 | 12px | 平台下载条内深色块 |
+| `.home-primary-action` | 见 `styles.css` | 15px 级 | 药丸/圆角 | 功能页/下载页主行动 |
+
+**交互：** 主色悬停 `--primary-hover` 或 Launch 珊瑚色 `--launch-coral`；可点击元素 `:active` 允许轻微 `scale(0.98)` 或 `translateY(-2px)`（Launch CTA 上浮）。
+
+**焦点：** `outline` / `box-shadow: 0 0 0 3px var(--primary-soft)`，与客户端焦点环色相一致。
+
+**禁用：** 下载链接未就绪时使用 `.btn-disabled`，**不得**保留 `href="#"` 假跳转。
+
+### 15.4 组件与区块
+
 - Hero 区：一句主标题 + 一句副标题 + 最多 2 个 CTA
-- Feature 卡片 2×2 或自适应网格，避免过长段落
+- Feature 卡片自适应网格，卡片内标题/说明字号见 §4.4
+- 装饰性 UI 卡片（`.launch-ui`）仅用于首页示意，字号 10–13px，不得当作正文阅读尺寸
 
-### 15.4 导航与页脚（全站统一）
+### 15.5 页眉与页脚（全站统一）
 
-**所有官网页面**（`index` / `features` / `download` / `privacy` / `terms`）必须使用同一套顶栏与页脚，不得各页各写一套链接。
+**所有官网页面**（`index` / `features` / `download` / `privacy` / `terms`）须使用下列三种页眉之一 + 统一页脚，不得另写第四套结构。
 
-**顶栏结构：**
+#### 页眉模式 A — Launch 首页（`index.html`）
 
 ```
-[ Logo 横版 wordmark ]    首页 · 下载 · 隐私 · 协议    [ 免费下载 ]
+[ Logo 横版 wordmark ]                    [ 免费下载 → /download/ ]
 ```
 
 | 元素 | 规范 |
 |------|------|
-| Logo | `assets/logo.png`，高度 **56px**（横版 wordmark，含品牌名） |
-| 导航链接 | 固定四项：首页、下载、隐私、协议；字号 14px，`--text-secondary`，悬停 `--text` |
-| 当前页 | 对应链接加 `.is-active`（`--text` + 字重 600），由 `site.js` 按路径自动标记 |
-| 右侧 CTA | 主按钮「免费下载」→ `download.html`；在下载页可改为锚点 `#mac` |
-| 移动端 | `<640px` 隐藏中间链接，保留 Logo + CTA |
+| 容器 | `.launch-header.launch-wrap`，min-height **104px**（移动 **82px**） |
+| Logo | `assets/logo.png`，链接 `/`；高度随 CSS 约束，横版 wordmark |
+| 右侧 CTA | `.launch-header-cta` → `/download/`，文案「免费下载」 |
+| **禁止** | 中间横向导航、汉堡菜单、多链顶栏 |
 
-**页脚结构（固定）：**
+#### 页眉模式 B — 内页壳（`features/` · `download/`）
 
 ```
-© 2026 Petory
-隐私政策 · 用户协议 · 下载
+[ Logo ]                              [ 返回首页 → / ]
 ```
 
-- 不得使用仅「返回首页」的简化页脚
-- 法律页正文区使用 `.page-legal`，样式定义在 `styles.css`，禁止每页内联一套 legal CSS
+| 元素 | 规范 |
+|------|------|
+| 容器 | `.home-header` 于 `.home-shell` 内 |
+| 返回 | `.download-back` 或等价「返回首页」，14px / semibold / secondary |
+| **禁止** | 再叠加中间导航条 |
 
-### 15.5 品牌资产
+#### 页眉模式 C — 法律页（`privacy/` · `terms/`）
+
+```
+[ Logo ]                              [ 返回首页 → / ]
+```
+
+| 元素 | 规范 |
+|------|------|
+| 容器 | `.nav`：Logo + `.nav-back` |
+| 说明 | 与模式 B 信息架构相同，样式走 legal 页既有 `.nav` 规则 |
+
+> 遗留样式 `.nav-links` / `.nav-menu-toggle` 仅服务于极旧页面；**新页面不得新增中间导航**。`site.js` 中的移动菜单逻辑可保留兼容，但不应在新设计中使用。
+
+#### 页脚（固定）
+
+**Launch 首页** — `.launch-footer`：
+
+```
+© 2026 Petory · petory.chat          功能介绍 · 隐私政策 · 用户协议 · 下载 · GitHub
+```
+
+**内页** — `.home-footer`：
+
+```
+© 2026 Petory                        功能介绍 · 隐私政策 · 用户协议 · 下载
+```
+
+| 规则 | 说明 |
+|------|------|
+| 链接 | 功能介绍 `/features/`；隐私 `/privacy/`；协议 `/terms/`；下载 `/download/` |
+| 字号 | 12px；默认 muted 灰，hover 加深至正文色 |
+| **禁止** | 仅「返回首页」的单链简化页脚 |
+| 法务正文 | 使用 `.page-legal`，样式只在 `styles.css` 维护，禁止页内联 legal CSS |
+
+### 15.6 品牌资产
 
 **唯一源目录：** `petory_logo/`（仅 2 张 **RGBA 透明底**源图；勿在其他目录手改派生图）
 
@@ -568,16 +665,16 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 
 **禁止：** 额外存放 `app-icon.png`、`avatar.png` 或 `resources/brand/` 副本；禁止把 wordmark 用作 favicon/Dock 图标。
 
-### 15.6 下载页交互
+### 15.7 下载页交互
 
 - 版本号从 `releases/latest.json` 读取；失败时显示「暂不可用」，**不得**写死 `1.0.0`
 - 下载按钮文案固定为「下载 macOS 版」「下载 Windows 版」；文件名与体积放在按钮下方 `.download-meta`
-- 「查看系统要求」链到 `download.html#requirements`
+- 「查看系统要求」链到 `/download/#requirements`
 - `#requirements` 区块列出 macOS / Windows 最低版本与网络说明
 
-### 15.7 法律页
+### 15.8 法律页
 
-- 与首页相同顶栏 + 页脚；正文 max-width 720px
+- 页眉模式 C（§15.5）+ 内页页脚；正文 `.page-legal`，max-width 720px
 - 语气用「你」不用「您」；避免法律腔以外的技术术语
 
 ---
@@ -635,10 +732,10 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 - [ ] 表格有空状态与加载态
 
 **官网**
-- [ ] 四页导航、页脚一致（见 §15.4）
+- [ ] 五页页眉/页脚一致（见 §15.5）；无中间四链顶栏
 - [ ] 无开发/演示/internal 文案
 - [ ] 功能描述与当前版本一致
-- [ ] CTA 指向 `download.html`；系统要求指向 `#requirements`
+- [ ] CTA 指向 `/download/`；系统要求指向 `/download/#requirements`
 - [ ] 登录区不同时堆叠 app-icon 与 logo
 
 ---
@@ -720,11 +817,11 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 
 ### 21.2 官网
 
-1. 桌面端展示完整导航；小于 640px 时使用可展开菜单，不得直接删除页面入口。
+1. 页眉仅 Logo + 单一行动（首页「免费下载」或内页「返回首页」）；**禁止**恢复中间四链顶栏。跨页入口集中在页脚。
 2. Hero 首屏应在常见笔记本高度内同时看到标题、核心 CTA 与产品形象。
 3. 功能卡应有明确阅读顺序和差异化信息，不使用完全同权的占位卡堆叠。
 4. 下载按钮必须在链接未就绪时呈禁用/加载态，不能保留 `href="#"` 的假跳转体验。
-5. 法务页保持 65-75 个汉字的阅读宽度，标题锚点与键盘焦点可用。
+5. 法务页保持 65–75 个汉字的阅读宽度，标题锚点与键盘焦点可用。
 
 ### 21.3 管理端
 
@@ -742,7 +839,7 @@ MVP **不加载外部字体**，使用系统字体栈保证性能与原生感。
 | 创建桌宠 | 420×560 | 380×520 | 返回、选择、提交 | 上传失败、生成中、生成失败 |
 | 聊天/专注/成长 | 320-360px 宽 | 最小窗口 | 输入、关闭、切换 | 空态、额度、网络失败 |
 | 设置/宠物管理/指南 | 480×640 | 最小窗口 | 开关、保存、翻页 | 加载、保存失败、确认弹窗 |
-| 官网四页 | 1440×900 | 390×844 | 导航、CTA、链接 | 下载清单失败 |
+| 官网五页（首页·功能·下载·隐私·协议） | 1440×900 | 390×844 | 页眉 CTA/返回、页脚链接 | 下载清单失败 |
 | 管理端 | 1440×900 | 390×844 | 导航、表单、Tab | 登录、列表、写操作失败 |
 
 每次视觉改动至少完成一轮对应矩阵检查，并将有代表性的截图和结论放入 `docs/audits/YYYY-MM-DD/`。
