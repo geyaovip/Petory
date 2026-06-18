@@ -10,6 +10,7 @@ import { adminRoutes } from './routes/admin.js'
 import { chatRoutes } from './routes/chat.js'
 import { appRoutes } from './routes/app.js'
 import { consumeAdminMagicLink, requestAdminMagicLink } from './services/authService.js'
+import { API_VERSION, getDeploymentInfo } from './services/deploymentService.js'
 import { ensureUploadsDir } from './services/storageService.js'
 
 export function createApp() {
@@ -22,8 +23,9 @@ export function createApp() {
   app.get('/health', (c) =>
     c.json({
       ok: true,
-      version: 'B1.4.0',
-      imageApi: Boolean(config.arkApiKey)
+      version: API_VERSION,
+      imageApi: Boolean(config.arkApiKey),
+      deployment: getDeploymentInfo()
     })
   )
 

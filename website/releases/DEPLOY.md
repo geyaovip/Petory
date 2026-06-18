@@ -8,6 +8,7 @@
 2. 在 `windows-latest` 构建 x64 `Petory-Setup-{version}.exe`
 3. 创建 [GitHub Release](https://github.com/geyaovip/petory/releases) 并上传安装包
 4. 更新 `website/releases/latest.json`、`latest-mac.yml`、`latest.yml` 并推回 `main`
+5. 如果仓库已配置 `PETORY_DEPLOY_SSH_KEY`，自动镜像 `.dmg/.exe` 到 `https://api.petory.chat/downloads/`
 
 ```bash
 # 1. 确认 package.json 版本号
@@ -22,12 +23,27 @@ git push origin v2.4.0
 
 ### 可选：镜像安装包到 API 服务器
 
-若希望安装包从 `https://api.petory.chat/downloads/` 分发（例如 mac 走国内 VPS CDN）：
+若自动镜像失败，或需要手动重试：
+
+1. 打开 **Actions → Mirror Downloads → Run workflow**
+2. 输入 release tag，例如 `v2.4.25`
+
+也可以从本地执行：
+
+```bash
+npm run deploy:downloads -- --from-github
+```
+
+若希望临时手动上传安装包：
 
 ```bash
 scp release/Petory-*.dmg release/Petory-Setup-*.exe \
   ubuntu@165.154.203.52:/home/ubuntu/apps/petory/current/deploy/server/downloads/
+```
 
+更新下载链接策略时重新生成 release feed：
+
+```bash
 # 仅 mac 走 API、Windows 仍走 GitHub：
 npm run release:prepare
 

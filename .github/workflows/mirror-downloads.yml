@@ -1,0 +1,91 @@
+name: Mirror Downloads
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to mirror, for example v2.4.25'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Resolve release tag
+        id: release
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${INPUT_TAG:-}" ]]; then
+            TAG="${INPUT_TAG}"
+          else
+            VERSION="$(node -p "require('./package.json').version")"
+            TAG="v${VERSION}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download release installers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          node scripts/download-release-installers.mjs "${TAG}" release
+          ls -lah release
+
+      - name: Mirror installers to VPS
+        env:
+          PETORY_DEPLOY_HOST: ${{ secrets.PETORY_DEPLOY_HOST || vars.PETORY_DEPLOY_HOST || '165.154.203.52' }}
+          PETORY_DEPLOY_USER: ${{ secrets.PETORY_DEPLOY_USER || vars.PETORY_DEPLOY_USER || 'ubuntu' }}
+          PETORY_DEPLOY_DOWNLOADS: ${{ secrets.PETORY_DEPLOY_DOWNLOADS || vars.PETORY_DEPLOY_DOWNLOADS || '/home/ubuntu/apps/petory/current/deploy/server/downloads' }}
+          PETORY_DEPLOY_SSH_KEY: ${{ secrets.PETORY_DEPLOY_SSH_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${PETORY_DEPLOY_SSH_KEY}" ]]; then
+            echo "::notice::PETORY_DEPLOY_SSH_KEY is not configured; skipping VPS download mirror."
+            exit 0
+          fi
+
+          HOST="${PETORY_DEPLOY_HOST}"
+          USER="${PETORY_DEPLOY_USER}"
+          if [[ "${HOST}" == *@* ]]; then
+            USER="${HOST%@*}"
+            HOST="${HOST#*@}"
+          fi
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${PETORY_DEPLOY_SSH_KEY}" > ~/.ssh/petory_deploy_key
+          chmod 600 ~/.ssh/petory_deploy_key
+          ssh-keyscan -H "${HOST}" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/petory_deploy_key -o IdentitiesOnly=yes "${USER}@${HOST}" "mkdir -p '${PETORY_DEPLOY_DOWNLOADS}'"
+          scp -i ~/.ssh/petory_deploy_key -o IdentitiesOnly=yes release/Petory-*.dmg release/Petory-Setup-*.exe "${USER}@${HOST}:${PETORY_DEPLOY_DOWNLOADS}/"
+
+      - name: Mirror summary
+        shell: bash
+        run: |
+          {
+            echo "### Petory downloads mirrored"
+            echo ""
+            echo "- Release: \`${{ steps.release.outputs.tag }}\`"
+            echo "- macOS: \`Petory-${{ steps.release.outputs.version }}-universal.dmg\`"
+            echo "- Windows: \`Petory-Setup-${{ steps.release.outputs.version }}.exe\`"
+          } >> "$GITHUB_STEP_SUMMARY"

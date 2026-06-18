@@ -32,40 +32,16 @@ function collectLocalArtifacts() {
     .map((name) => path.join(releaseDir, name))
 }
 
-async function downloadFromGithub() {
-  const tag = `v${version}`
-  const apiUrl = `https://api.github.com/repos/geyaovip/petory/releases/tags/${tag}`
-  const res = await fetch(apiUrl)
-  if (!res.ok) {
-    console.error(`✗ GitHub release ${tag} not found (${res.status})`)
-    process.exit(1)
-  }
-  const release = await res.json()
-  const targets = release.assets.filter((asset) => /\.(dmg|exe)$/.test(asset.name))
-  if (targets.length === 0) {
-    console.error(`✗ No .dmg/.exe assets on release ${tag}`)
-    process.exit(1)
-  }
-  fs.mkdirSync(releaseDir, { recursive: true })
-  const paths = []
-  for (const asset of targets) {
-    const dest = path.join(releaseDir, asset.name)
-    console.log(`→ Download ${asset.name}`)
-    const fileRes = await fetch(asset.browser_download_url)
-    if (!fileRes.ok) {
-      console.error(`✗ Failed to download ${asset.name}`)
-      process.exit(1)
-    }
-    fs.writeFileSync(dest, Buffer.from(await fileRes.arrayBuffer()))
-    paths.push(dest)
-  }
-  return paths
-}
-
 let files = collectLocalArtifacts()
 if (files.length === 0 || fromGithub) {
   console.log(`Fetching release artifacts for v${version} from GitHub…`)
-  files = await downloadFromGithub()
+  run('node', ['scripts/download-release-installers.mjs', `v${version}`, releaseDir])
+  files = collectLocalArtifacts()
+}
+
+if (files.length === 0) {
+  console.error('✗ No .dmg/.exe files found in release/')
+  process.exit(1)
 }
 
 console.log(`\n→ Upload ${files.length} file(s) to ${host}:${remoteDir}`)

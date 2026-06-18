@@ -24,6 +24,8 @@ const composeFile = 'deploy/server/compose.yaml'
 const args = process.argv.slice(2)
 const envOnly = args.includes('--env-only')
 const skipEnv = args.includes('--skip-env')
+const deployedAt = new Date().toISOString()
+const remoteDeployEnv = `DEPLOY_SHA=$(git rev-parse HEAD) DEPLOY_VERSION=$(node -p "require('./package.json').version") DEPLOYED_AT=${deployedAt}`
 
 function run(command, runArgs, options = {}) {
   const result = spawnSync(command, runArgs, {
@@ -55,7 +57,7 @@ if (!skipEnv) {
 
 if (envOnly) {
   step('Recreate API container (reload .env)')
-  ssh(`cd ${remotePath} && docker compose -f ${composeFile} up -d api`)
+  ssh(`cd ${remotePath} && ${remoteDeployEnv} docker compose -f ${composeFile} up -d api`)
   console.log('\n✓ Env synced and API restarted')
   process.exit(0)
 }
@@ -64,7 +66,7 @@ step(`Pull latest code on ${host}`)
 ssh(`cd ${remotePath} && git pull --ff-only`)
 
 step('Rebuild API container')
-ssh(`cd ${remotePath} && docker compose -f ${composeFile} up -d --build api`)
+ssh(`cd ${remotePath} && ${remoteDeployEnv} docker compose -f ${composeFile} up -d --build api`)
 
 step('Apply database schema')
 ssh(`cd ${remotePath} && docker compose -f ${composeFile} exec -T api npx prisma db push`)

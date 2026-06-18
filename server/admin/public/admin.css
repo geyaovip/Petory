@@ -197,6 +197,17 @@ body {
   flex-wrap: wrap;
 }
 
+.deploy-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--muted);
+  white-space: nowrap;
+}
+
 .nav-toggle {
   display: none;
 }
@@ -782,6 +793,10 @@ img.thumb {
   }
 
   .topbar-actions #refreshBtn {
+    display: none;
+  }
+
+  .deploy-chip {
     display: none;
   }
 

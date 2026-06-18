@@ -1,0 +1,89 @@
+name: Deploy Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag, or commit to deploy'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: petory-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || 'main' }}
+          fetch-depth: 0
+
+      - name: Resolve deployment target
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHA:0:7}" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "deployed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy over SSH
+        env:
+          PETORY_DEPLOY_HOST: ${{ secrets.PETORY_DEPLOY_HOST || vars.PETORY_DEPLOY_HOST || '165.154.203.52' }}
+          PETORY_DEPLOY_USER: ${{ secrets.PETORY_DEPLOY_USER || vars.PETORY_DEPLOY_USER || 'ubuntu' }}
+          PETORY_DEPLOY_PATH: ${{ secrets.PETORY_DEPLOY_PATH || vars.PETORY_DEPLOY_PATH || '/home/ubuntu/apps/petory/current' }}
+          PETORY_DEPLOY_SSH_KEY: ${{ secrets.PETORY_DEPLOY_SSH_KEY }}
+          DEPLOY_SHA: ${{ steps.target.outputs.sha }}
+          DEPLOY_REF: ${{ inputs.ref || 'main' }}
+          DEPLOY_VERSION: ${{ steps.target.outputs.version }}
+          DEPLOYED_AT: ${{ steps.target.outputs.deployed_at }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${PETORY_DEPLOY_SSH_KEY}" ]]; then
+            echo "::error::Missing PETORY_DEPLOY_SSH_KEY repository secret."
+            exit 1
+          fi
+
+          HOST="${PETORY_DEPLOY_HOST}"
+          USER="${PETORY_DEPLOY_USER}"
+          if [[ "${HOST}" == *@* ]]; then
+            USER="${HOST%@*}"
+            HOST="${HOST#*@}"
+          fi
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${PETORY_DEPLOY_SSH_KEY}" > ~/.ssh/petory_deploy_key
+          chmod 600 ~/.ssh/petory_deploy_key
+          ssh-keyscan -H "${HOST}" >> ~/.ssh/known_hosts
+
+          SSH=(ssh -i ~/.ssh/petory_deploy_key -o IdentitiesOnly=yes "${USER}@${HOST}")
+          REMOTE_ENV="DEPLOY_SHA=${DEPLOY_SHA} DEPLOY_VERSION=${DEPLOY_VERSION} DEPLOYED_AT=${DEPLOYED_AT}"
+
+          "${SSH[@]}" "cd '${PETORY_DEPLOY_PATH}' && git fetch origin --prune && if git show-ref --verify --quiet \"refs/remotes/origin/${DEPLOY_REF}\"; then git checkout '${DEPLOY_REF}' && git pull --ff-only origin '${DEPLOY_REF}'; else git checkout --detach '${DEPLOY_SHA}'; fi && test \"\$(git rev-parse HEAD)\" = '${DEPLOY_SHA}' && git submodule update --init --recursive"
+          "${SSH[@]}" "cd '${PETORY_DEPLOY_PATH}' && ${REMOTE_ENV} docker compose -f deploy/server/compose.yaml up -d --build api"
+          "${SSH[@]}" "cd '${PETORY_DEPLOY_PATH}' && docker compose -f deploy/server/compose.yaml exec -T api npx prisma db push"
+          "${SSH[@]}" "curl -sf http://127.0.0.1:8787/health"
+          curl -sf https://api.petory.chat/health
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          {
+            echo "### Petory server deployed"
+            echo ""
+            echo "- Ref: \`${{ inputs.ref || 'main' }}\`"
+            echo "- Commit: \`${{ steps.target.outputs.short_sha }}\`"
+            echo "- Client version in repo: \`${{ steps.target.outputs.version }}\`"
+            echo "- Public health: https://api.petory.chat/health"
+          } >> "$GITHUB_STEP_SUMMARY"

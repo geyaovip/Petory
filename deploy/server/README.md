@@ -66,6 +66,31 @@ Verify image API is configured (`imageApi: true`):
 curl -s https://api.petory.chat/health
 ```
 
+### Deploy from GitHub Actions
+
+Use **Actions → Deploy Server → Run workflow** for production API/admin deploys.
+The workflow deploys the selected `main` commit to the VPS, rebuilds the API
+container, applies Prisma schema changes, and checks both local and public
+health endpoints.
+
+Required repository secret:
+
+| Secret | Description |
+|---|---|
+| `PETORY_DEPLOY_SSH_KEY` | Private SSH key allowed to access the VPS deploy user |
+
+Optional repository secrets or variables:
+
+| Name | Default |
+|---|---|
+| `PETORY_DEPLOY_HOST` | `165.154.203.52` |
+| `PETORY_DEPLOY_USER` | `ubuntu` |
+| `PETORY_DEPLOY_PATH` | `/home/ubuntu/apps/petory/current` |
+| `PETORY_DEPLOY_DOWNLOADS` | `/home/ubuntu/apps/petory/current/deploy/server/downloads` |
+
+The API exposes deployment metadata at `https://api.petory.chat/api/app/version`
+and includes it in `/health`.
+
 ### Deploy from local (recommended)
 
 On your Mac (SSH access to VPS, `server/.env` filled):
@@ -91,6 +116,9 @@ Mirror installers to `https://api.petory.chat/downloads/`:
 npm run deploy:downloads               # from local release/
 npm run deploy:downloads -- --from-github
 ```
+
+Client releases also attempt this mirror automatically from the `Release`
+workflow when `PETORY_DEPLOY_SSH_KEY` is configured.
 
 Never commit `deploy/server/.env`.
 

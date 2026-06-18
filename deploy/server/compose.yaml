@@ -26,6 +26,9 @@ services:
     environment:
       DATABASE_URL: postgresql://petory:${POSTGRES_PASSWORD}@postgres:5432/petory?schema=public
       PORT: 8787
+      DEPLOY_SHA: ${DEPLOY_SHA:-local}
+      DEPLOY_VERSION: ${DEPLOY_VERSION:-local}
+      DEPLOYED_AT: ${DEPLOYED_AT:-}
     ports:
       - "127.0.0.1:8787:8787"
     volumes:

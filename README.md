@@ -55,7 +55,13 @@ The app expects `ARK_API_KEY` for Seedream image generation and `KIMI_API_KEY` f
 - App releases: GitHub Releases
 - Public website: Cloudflare Pages on `petory.chat`
 - Update feed: `https://petory.chat/releases`
-- Backend API: your cloud server, separate from the static site
+- Backend API and admin console: VPS Docker, exposed through Cloudflare Tunnel as `api.petory.chat`
+
+## Release and deploy flow
+
+- Client releases run through GitHub Actions `Release`; successful releases build macOS/Windows installers, publish GitHub Release assets, update the website release feed, and mirror `.dmg/.exe` files to the VPS download directory when deploy SSH secrets are configured.
+- Server/admin deployments run through GitHub Actions `Deploy Server` or the local fallback `npm run deploy:server`.
+- Manual download mirroring can be retried through GitHub Actions `Mirror Downloads` or `npm run deploy:downloads -- --from-github`.
 
 ## Documentation
 

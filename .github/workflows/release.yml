@@ -65,6 +65,9 @@ jobs:
   publish:
     needs: [build-mac, build-win]
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -136,3 +139,55 @@ jobs:
           fi
           git commit -m "chore: sync release feeds for ${{ steps.version.outputs.tag }}"
           git push origin HEAD:main
+
+  mirror-downloads:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Download release installers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.publish.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          node scripts/download-release-installers.mjs "${TAG}" release
+          ls -lah release
+
+      - name: Mirror installers to VPS
+        env:
+          PETORY_DEPLOY_HOST: ${{ secrets.PETORY_DEPLOY_HOST || vars.PETORY_DEPLOY_HOST || '165.154.203.52' }}
+          PETORY_DEPLOY_USER: ${{ secrets.PETORY_DEPLOY_USER || vars.PETORY_DEPLOY_USER || 'ubuntu' }}
+          PETORY_DEPLOY_DOWNLOADS: ${{ secrets.PETORY_DEPLOY_DOWNLOADS || vars.PETORY_DEPLOY_DOWNLOADS || '/home/ubuntu/apps/petory/current/deploy/server/downloads' }}
+          PETORY_DEPLOY_SSH_KEY: ${{ secrets.PETORY_DEPLOY_SSH_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${PETORY_DEPLOY_SSH_KEY}" ]]; then
+            echo "::notice::PETORY_DEPLOY_SSH_KEY is not configured; skipping VPS download mirror."
+            exit 0
+          fi
+
+          HOST="${PETORY_DEPLOY_HOST}"
+          USER="${PETORY_DEPLOY_USER}"
+          if [[ "${HOST}" == *@* ]]; then
+            USER="${HOST%@*}"
+            HOST="${HOST#*@}"
+          fi
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${PETORY_DEPLOY_SSH_KEY}" > ~/.ssh/petory_deploy_key
+          chmod 600 ~/.ssh/petory_deploy_key
+          ssh-keyscan -H "${HOST}" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/petory_deploy_key -o IdentitiesOnly=yes "${USER}@${HOST}" "mkdir -p '${PETORY_DEPLOY_DOWNLOADS}'"
+          scp -i ~/.ssh/petory_deploy_key -o IdentitiesOnly=yes release/Petory-*.dmg release/Petory-Setup-*.exe "${USER}@${HOST}:${PETORY_DEPLOY_DOWNLOADS}/"

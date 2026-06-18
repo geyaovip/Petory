@@ -73,6 +73,7 @@
             <p id="viewSubtitle" class="muted" style="margin: 4px 0 0"></p>
           </div>
           <div class="topbar-actions">
+            <span id="deploymentInfo" class="deploy-chip muted">版本信息加载中…</span>
             <span id="adminRoleBadge" class="badge warn hidden"></span>
             <button id="refreshBtn" class="secondary" type="button">刷新当前页</button>
             <button id="logoutBtn" class="secondary" type="button">退出</button>
@@ -295,6 +296,26 @@
           const node = document.getElementById(id)
           if (node) node.innerHTML = '<p class="loading">加载中…</p>'
         })
+      }
+
+      async function loadDeploymentInfo() {
+        const el = document.getElementById('deploymentInfo')
+        if (!el) return
+        try {
+          const info = await api('/api/app/version', { skipAuth: true })
+          const parts = [
+            info.clientVersion ? `客户端 ${info.clientVersion}` : null,
+            info.apiVersion ? `API ${info.apiVersion}` : null,
+            info.shortCommit ? `#${info.shortCommit}` : null
+          ].filter(Boolean)
+          el.textContent = parts.join(' · ') || '版本信息不可用'
+          el.title = [
+            info.commit ? `Commit: ${info.commit}` : null,
+            info.deployedAt ? `部署时间: ${info.deployedAt}` : null
+          ].filter(Boolean).join('\n')
+        } catch {
+          el.textContent = '版本信息不可用'
+        }
       }
 
       function pageQuery(page) {
@@ -654,6 +675,7 @@
         const me = await api('/api/admin/me')
         adminRole = me.role
         applyWriteMode()
+        void loadDeploymentInfo()
         loadedViews.clear()
         await loadView(currentView, true)
       }
